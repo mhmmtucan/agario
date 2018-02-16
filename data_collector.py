@@ -10,6 +10,29 @@ from utils import InputCheck
 from utils import ExperienceBuffer
 from frame_processor import process
 
+def fix_data(filename):
+    experience_buffer = ExperienceBuffer()
+    print('loading data to fix')
+    data = np.load(filename)
+    for d in data:
+        past_areas = d[0]
+        current_area = d[1]
+        future_areas = d[2]
+        mouse = d[3]
+        space = d[4]
+        current_frame = d[5]
+
+        past_areas = np.array(past_areas).reshape(5)
+        current_area = np.array([current_area]).reshape(1)
+        future_areas = np.array(future_areas).reshape(5)
+        mouse = np.array(mouse).reshape(9)
+        space = np.array([space]).reshape(1)
+
+        experience_buffer.add(np.reshape(np.array([past_areas, current_area, future_areas, mouse, space, current_frame]), [1, 6]))
+
+    experience_buffer.save(filename)
+    print('saved the fixed data')
+
 def convert_data(areas, frames, mouses, spaces):
     episode_buffer = ExperienceBuffer()
 
@@ -37,11 +60,19 @@ def convert_data(areas, frames, mouses, spaces):
         else:
             future_areas = areas[i + 1 : i + 6]
 
+        past_areas = np.array(past_areas)
+        current_area = np.array([current_area])
+        future_areas = np.array(future_areas)
+        mouse = np.array(mouse)
+        space = np.array([space])
+
         episode_buffer.add(np.reshape(np.array([past_areas, current_area, future_areas, mouse, space, current_frame]), [1, 6]))
 
     return episode_buffer
 
 if __name__ == '__main__':
+    fix_data('training_data.npy')
+
     config = Config()
 
     paused = False
