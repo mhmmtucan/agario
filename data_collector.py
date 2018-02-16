@@ -1,3 +1,4 @@
+import cv2
 import time
 import pyautogui
 
@@ -9,18 +10,45 @@ from utils import InputCheck
 from utils import ExperienceBuffer
 from frame_processor import process
 
+def convert_data(areas, frames, mouses, spaces):
+    episode_buffer = ExperienceBuffer()
+
+    frame_num = len(frames)
+    look_up = 5
+
+    # we might want to remove last five frame when processing
+    # if we remove last five frame from the frames list we can have non-zero last areas
+    # if we dont we can remove the frames after the character died so we could get rid of menu frames
+    for i, frame in enumerate(frames):
+        past_areas = []
+        current_area = areas[i]
+        future_areas = []
+        current_frame = frames[i]
+        mouse = mouses[i]
+        space = spaces[i]
+
+        if i < look_up:
+            past_areas = [0] * (look_up - i) + areas[0 : i]
+        else:
+            past_areas = areas[i - look_up : i]
+
+        if i >= frame_num - look_up:
+            future_areas = areas[i + 1 : frame_num] + [0] * (i + look_up - frame_num + 1)
+        else:
+            future_areas = areas[i + 1 : i + 6]
+
+        episode_buffer.add(np.reshape(np.array([past_areas, current_area, future_areas, mouse, space, current_frame]), [1, 6]))
+
+    return episode_buffer
+
 if __name__ == '__main__':
     config = Config()
 
     paused = False
-    window_width, window_height = pyautogui.size()
     ic = InputCheck(config)
 
     max_buffer_size = 50000
     session_buffer = ExperienceBuffer(max_buffer_size)
-
-    filenames = ['first', 'second', 'third', 'fourth', 'fifth']
-    filename_index = 0
 
     sct = mss()
     
@@ -46,6 +74,10 @@ if __name__ == '__main__':
 
             frame, area, base_color = process(image, base_color, config)
 
+            #cv2.imshow('frame', frame)
+            #cv2.moveWindow('frame', 0, 0)
+            #cv2.waitKey(1)
+
             areas.append(area)
             frames.append(frame)
             mouses.append(ic.get_mouse_vector(pyautogui.position()))
@@ -68,50 +100,14 @@ if __name__ == '__main__':
 
             print('processing the user experience started')
             # create a function instead of this
-            frame_num = len(frames)
-            look_up = 5
-
-            # we might want to remove last five frame when processing
-            # if we remove last five frame from the frames list we can have non-zero last areas
-            # if we dont we can remove the frames after the character died so we could get rid of menu frames
-            for i, frame in enumerate(frames):
-                past_areas = []
-                area = areas[i]
-                future_areas = []
-                frame = frames[i]
-                mouse = mouses[i]
-                space = spaces[i]
-
-                if i < look_up:
-                    past_areas = [0] * (look_up - i) + areas[0 : i]
-                else:
-                    past_areas = areas[i - look_up : i]
-
-                if i >= frame_num - look_up:
-                    future_areas = areas[i + 1 : frame_num] + [0] * (i + look_up - frame_num + 1)
-                else:
-                    future_areas = areas[i + 1 : i + 6]
-
-
-                #print('frame number: {}, past_areas: {}'.format(i, past_areas))
-                #print('frame number: {}, area: {}'.format(i, area))
-                #print('frame number: {}, future_areas: {}'.format(i, future_areas))
-                #print('frame number: {}, frame: \n{}'.format(i, frame))
-                #print('frame number: {}, mouse: {}'.format(i, mouse))
-                #print('frame number: {}, space: {}'.format(i, space))
-                #print('')
-
-                # need to change the name of the file everytime or need to do load and save which will take more time
-                # used half of the screen as roi and resized to half when processing
-                # 75 frame took 20mb
-                session_buffer.add(np.reshape(np.array([past_areas, area, future_areas, mouse, space, frame]), [1, 6]))
-                session_buffer.save('training_data.npy')
-
-                if session_buffer.length == max_buffer_size:
-                    session_buffer = ExperienceBuffer(max_buffer_size)
-                    print('experience buffer is full')
+            session_buffer.add(convert_data(areas, frames, mouses, spaces).buffer)
+            session_buffer.save('training_data.npy')
 
             print('processing the user experience finnished')
+
+            if session_buffer.length == max_buffer_size:
+                session_buffer = ExperienceBuffer(max_buffer_size)
+                print('experience buffer is full')
 
         if 'C' in keys: # continue
             print('continue processing')
