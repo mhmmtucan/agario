@@ -136,4 +136,4 @@ def process(image, base_color, config):
     #cv2.imshow('FINAL', resized_image)
 
     # consider returning grayscale image
-    return cv2.cvtColor(im.resize(resized_image, width=config.sample_width, height=config.sample_height), cv2.COLOR_BGRA2GRAY), main_obj.area, base_color
+    return cv2.cvtColor(cv2.resize(resized_image, (config.sample_width, config.sample_height)), cv2.COLOR_BGRA2GRAY), main_obj.area, base_color
