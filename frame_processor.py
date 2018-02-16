@@ -20,7 +20,7 @@ class GameObject:
         self.average_area = area
         #self.isMainObj = isMainObj
 
-def process(image, base_color):
+def process(image, base_color, config):
     # resize the image so processing will be faster
     resized_image = im.resize(image, width=image.shape[1] // 2)
     original_image = resized_image.copy()
@@ -136,4 +136,4 @@ def process(image, base_color):
     #cv2.imshow('FINAL', resized_image)
 
     # consider returning grayscale image
-    return resized_image, main_obj.area, base_color
+    return cv2.cvtColor(im.resize(resized_image, width=config.sample_width, height=config.sample_height), cv2.COLOR_BGRA2GRAY), main_obj.area, base_color

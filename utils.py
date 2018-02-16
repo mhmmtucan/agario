@@ -1,26 +1,92 @@
-import os
 import time
+import platform
+import pyautogui
 
 import numpy as np
-import win32api as wapi
 
+from scipy.spatial import distance as dist
+
+platform_name = platform.system()
+if platform_name == 'Windows':
+    import win32api as wapi
+elif platform_name == 'Linux':
+    print('linux platform')
+elif platform_name == 'Darwin':
+    print('mac platform')
+else:
+    print('unrecognized platform')
+
+class Config:
+    def __init__(self):
+        self.screen_width, self.screen_height = pyautogui.size()
+        self.roi = {'top': 0, 'left': 0, 'width': self.screen_width, 'height': self.screen_height}
+        self.center = (self.screen_width // 2, self.screen_height // 2)
+        self.sample_width = 150
+        self.sample_height = 90
+        self.sample_depth = 1
+        self.actions = 9 # dismissing space hits for now
+        self.keys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890'
+
+# pygame and getkey modules did not work as i wanted. need to find another module for that
 # could not find anything else
 # for now i have used win32api for myself
 # did not delete the old scritps
 class InputCheck:
-    def __init__(self, keys):
-        self.keys = keys
+    def __init__(self, config):
+        self.keys = config.keys
 
         self.key_list = ['\b']
         for char in self.keys:
             self.key_list.append(char)
 
+        self.vector_to_positions = {
+            (1, 0, 0, 0, 0, 0, 0, 0, 0): (config.center[0] - config.screen_width // 10, config.center[1] + config.screen_height // 10), # top left
+            (0, 1, 0, 0, 0, 0, 0, 0, 0): (config.center[0], config.center[1] + config.screen_height // 10),                             # top
+            (0, 0, 1, 0, 0, 0, 0, 0, 0): (config.center[0] + config.screen_width // 10, config.center[1] + config.screen_height // 10), # top right
+            (0, 0, 0, 1, 0, 0, 0, 0, 0): (config.center[0] - config.screen_width // 10, config.center[1]),                              # mid left
+            (0, 0, 0, 0, 1, 0, 0, 0, 0): (config.center[0], config.center[1]),                                                          # mid
+            (0, 0, 0, 0, 0, 1, 0, 0, 0): (config.center[0] + config.screen_width // 10, config.center[1]),                              # mid right
+            (0, 0, 0, 0, 0, 0, 1, 0, 0): (config.center[0] - config.screen_width // 10, config.center[1] - config.screen_height // 10), # bot left
+            (0, 0, 0, 0, 0, 0, 0, 1, 0): (config.center[0], config.center[1] - config.screen_height // 10),                             # bot
+            (0, 0, 0, 0, 0, 0, 0, 0, 1): (config.center[0] + config.screen_width // 10, config.center[1] - config.screen_height // 10)  # bot right
+        }
+
+        self.position_to_vector = {
+            (config.center[0] - config.screen_width // 10, config.center[1] + config.screen_height // 10): (1, 0, 0, 0, 0, 0, 0, 0, 0), # top left
+            (config.center[0], config.center[1] + config.screen_height // 10): (0, 1, 0, 0, 0, 0, 0, 0, 0),                             # top
+            (config.center[0] + config.screen_width // 10, config.center[1] + config.screen_height // 10): (0, 0, 1, 0, 0, 0, 0, 0, 0), # top right
+            (config.center[0] - config.screen_width // 10, config.center[1]): (0, 0, 0, 1, 0, 0, 0, 0, 0),                              # mid left
+            (config.center[0], config.center[1]): (0, 0, 0, 0, 1, 0, 0, 0, 0),                                                          # mid
+            (config.center[0] + config.screen_width // 10, config.center[1]): (0, 0, 0, 0, 0, 1, 0, 0, 0),                              # mid right
+            (config.center[0] - config.screen_width // 10, config.center[1] - config.screen_height // 10): (0, 0, 0, 0, 0, 0, 1, 0, 0), # bot left
+            (config.center[0], config.center[1] - config.screen_height // 10): (0, 0, 0, 0, 0, 0, 0, 1, 0),                             # bot
+            (config.center[0] + config.screen_width // 10, config.center[1] - config.screen_height // 10): (0, 0, 0, 0, 0, 0, 0, 0, 1)  # bot right        
+        }
+
     def get_keys(self):
         keys = []
         for key in self.key_list:
-            if wapi.GetAsyncKeyState(ord(key)):
-                keys.append(key)
+            if  platform_name == 'Windows':
+                if wapi.GetAsyncKeyState(ord(key)):
+                    keys.append(key)
         return keys
+
+    def get_mouse_position(self, vector):
+        v = tuple(vector)
+        return self.vector_to_positions[v]
+
+    def get_mouse_vector(self, mouse):
+        min_dist = (np.inf, None)
+
+        for mouse_pos in self.position_to_vector.keys():
+            d = dist.euclidean(mouse_pos, mouse)
+            if d < min_dist[0]:
+                min_dist = (d, self.position_to_vector[mouse_pos])
+        
+        if min_dist[1] is None:
+            return list((0, 0, 0, 0, 1, 0, 0, 0, 0))
+        else:
+            return list(min_dist[1])
 
 class ExperienceBuffer:
     def __init__(self, buffer_size = 50000):

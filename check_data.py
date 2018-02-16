@@ -22,3 +22,7 @@ print('')
 print('mouse position counter')
 print(Counter(df[3].apply(str))) # printing the count of the mouse position -> 3 = mouse position
 print('')
+
+print('space key counter')
+print(Counter(df[4].apply(str))) # printing the count of the space key strokes -> 4 = space key
+print('')

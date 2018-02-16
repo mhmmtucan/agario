@@ -4,14 +4,17 @@ import pyautogui
 import numpy as np
 
 from mss import mss
+from utils import Config
 from utils import InputCheck
 from utils import ExperienceBuffer
 from frame_processor import process
 
 if __name__ == '__main__':
+    config = Config()
+
     paused = False
     window_width, window_height = pyautogui.size()
-    ic = InputCheck(keys="ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890")
+    ic = InputCheck(config)
 
     max_buffer_size = 50000
     session_buffer = ExperienceBuffer(max_buffer_size)
@@ -20,7 +23,6 @@ if __name__ == '__main__':
     filename_index = 0
 
     sct = mss()
-    roi = {'top': window_height // 4, 'left': window_width // 4, 'width': window_width // 2, 'height': window_height // 2}
     
     areas = [] # every element will be a list with 5 elements
     frames = [] # every element will be the processed version of the screen
@@ -37,19 +39,23 @@ if __name__ == '__main__':
 
     # main loop
     while True:
-        if paused == False:
-            image = np.array(sct.grab(monitor=roi), dtype='uint8')
+        keys = ic.get_keys()
 
-            frame, area, base_color = process(image, base_color)
-            x, y = pyautogui.position()
+        if paused == False:
+            image = np.array(sct.grab(monitor=config.roi), dtype='uint8')
+
+            frame, area, base_color = process(image, base_color, config)
 
             areas.append(area)
             frames.append(frame)
-            mouses.append(pyautogui.position())
-            spaces.append(0)
-            # also get the space key hits
+            mouses.append(ic.get_mouse_vector(pyautogui.position()))
+            # should space elemnts be 1x1 lists or normal integer
+            if ' ' in keys:
+                spaces.append(1)
+            else:
+                spaces.append(0)
 
-        keys = ic.get_keys()
+            # also get the space key hits
 
         if 'Q' in keys:
             print('quit processing')
@@ -103,6 +109,7 @@ if __name__ == '__main__':
 
                 if session_buffer.length == max_buffer_size:
                     session_buffer = ExperienceBuffer(max_buffer_size)
+                    print('experience buffer is full')
 
             print('processing the user experience finnished')
 
