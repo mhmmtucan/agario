@@ -8,7 +8,7 @@ from mss import mss
 from utils import Config
 from utils import InputCheck
 from utils import ExperienceBuffer
-from frame_processor import process
+from frame_processor import process, processV2
 
 def fix_data(filename):
     experience_buffer = ExperienceBuffer()
@@ -71,7 +71,7 @@ def convert_data(areas, frames, mouses, spaces):
     return episode_buffer
 
 if __name__ == '__main__':
-    fix_data('training_data.npy')
+    #fix_data('training_data.npy')
 
     config = Config()
 
@@ -82,13 +82,14 @@ if __name__ == '__main__':
     session_buffer = ExperienceBuffer(max_buffer_size)
 
     sct = mss()
-    
+
     areas = [] # every element will be a list with 5 elements
     frames = [] # every element will be the processed version of the screen
     mouses = [] # every element will be a tuple with 2 elements -> we can change this in to 1 x 8 one hot key vector
     spaces= [] # every element will be an binary integer 0 or 1
 
     base_color = []
+    first_time = True
 
     # wait 5 seconds to hide the terminal and start the game
     print("Open agar.io in 5 seconds")
@@ -103,7 +104,11 @@ if __name__ == '__main__':
         if paused == False:
             image = np.array(sct.grab(monitor=config.roi), dtype='uint8')
 
-            frame, area, base_color = process(image, base_color, config)
+            if first_time:
+                base_color = image[image.shape[0]//2,image.shape[1]//2]
+                first_time = False
+
+            frame, area, base_color = processV2(image, base_color, config)
 
             #cv2.imshow('frame', frame)
             #cv2.moveWindow('frame', 0, 0)
