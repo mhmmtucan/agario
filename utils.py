@@ -1,15 +1,19 @@
 import time
+import random
 import platform
 import pyautogui
-import numpy as np
-import random
 import threading
-from pynput.keyboard import Key, Listener
-from scipy.spatial import distance as dist
+
+import numpy as np
+
 from queue import Queue
 
-platform_name = platform.system()
+from pynput.keyboard import Key
+from pynput.keyboard import Listener
 
+from scipy.spatial import distance as dist
+
+platform_name = platform.system()
 
 if platform_name == 'Windows':
     import win32api as wapi

@@ -6,9 +6,15 @@ import tensorflow as tf
 
 from utils import Config
 
-from tflearn.layers.conv import conv_2d, max_pool_2d
-from tflearn.layers.core import input_data, dropout, fully_connected
+from tflearn.layers.conv import conv_2d
+from tflearn.layers.conv import max_pool_2d
+
+from tflearn.layers.core import input_data
+from tflearn.layers.core import dropout
+from tflearn.layers.core import fully_connected
+
 from tflearn.layers.estimator import regression
+
 from tflearn.layers.normalization import local_response_normalization
 
 # tensorboard --logdir=foo:C:/Users/H/Desktop/ai-gaming/log
