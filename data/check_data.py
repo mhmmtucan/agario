@@ -3,7 +3,9 @@ import pandas as pd
 
 from collections import Counter
 
-def print_data(data):
+def print_data(filename):
+    data = np.load(filename)
+
     df = pd.DataFrame(data)
 
     print('len')
@@ -26,7 +28,9 @@ def print_data(data):
     print(Counter(df[4].apply(str))) # printing the count of the space key strokes -> 4 = space key
     print('')
 
-def print_size(data):
+def print_size(filename):
+    data = np.load(filename)
+    
     prevs = data[:, 0]
     currs = data[:, 1]
     futus = data[:, 2]
@@ -40,7 +44,9 @@ def print_size(data):
     print('prev size: {}, cur size: {}, fut size: {}, mous size: {}, space size: {}, frame size: {}'.format(prevs[0].shape, currs[0].shape, futus[0].shape, mouss[0].shape, spacs[0].shape, frams[0].shape))
     print('prev dtype: {}, cur dtype: {}, fut dtype: {}, mous dtype: {}, space dtype: {}, frame dtype: {}'.format(prevs[0].dtype, currs[0].dtype, futus[0].dtype, mouss[0].dtype, spacs[0].dtype, frams[0].dtype))
 
-def print_play(data):
+def print_play(filename):
+    data = np.load(filename)
+    
     prevs = np.array([i[0] for i in data], dtype=np.float32).reshape((-1, 5))
     currs = np.array([i[1] for i in data], dtype=np.float32).reshape((-1, 1))
     futus = np.array([i[2] for i in data], dtype=np.float32).reshape((-1, 5))
@@ -53,12 +59,3 @@ def print_play(data):
     print('')
     print('prev size: {}, cur size: {}, fut size: {}, mous size: {}, space size: {}, frame size: {}'.format(prevs[0].shape, currs[0].shape, futus[0].shape, mouss[0].shape, spacs[0].shape, frams[0].shape))
     print('prev dtype: {}, cur dtype: {}, fut dtype: {}, mous dtype: {}, space dtype: {}, frame dtype: {}'.format(prevs[0].dtype, currs[0].dtype, futus[0].dtype, mouss[0].dtype, spacs[0].dtype, frams[0].dtype))
-
-if __name__ == '__main__':
-    data = np.load('training_data.npy')
-
-    #print_data(data)
-    #print('')
-    #print_size(data)
-    #print('')
-    print_play(data)

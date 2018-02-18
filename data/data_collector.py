@@ -8,7 +8,7 @@ from mss import mss
 from utils import Config
 from utils import InputCheck
 from utils import ExperienceBuffer
-from frame_processor import process, processV2
+from frame.frame_processor import process, processV2
 
 def fix_data(filename):
     experience_buffer = ExperienceBuffer()
@@ -70,7 +70,7 @@ def convert_data(areas, frames, mouses, spaces):
 
     return episode_buffer
 
-if __name__ == '__main__':
+def start_collecting(filename):
     #fix_data('training_data.npy')
 
     config = Config()
@@ -137,7 +137,7 @@ if __name__ == '__main__':
             print('processing the user experience started')
             # create a function instead of this
             session_buffer.add(convert_data(areas, frames, mouses, spaces).buffer)
-            session_buffer.save('training_data.npy')
+            session_buffer.save(filename)
 
             print('processing the user experience finnished')
 

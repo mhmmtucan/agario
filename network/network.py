@@ -40,7 +40,10 @@ def convnet(config):
     # try to change it
     # try to find better options
     # maybe they can be used as weight or bias
+    # did not liked this approach, look into convolutional layers weight and biases to try to use them as weight and bias
+    # or look at the multi layer perceptron might be good idea to used those
     network = tf.concat([network, side_network1, side_network2, side_network3, side_network4], axis=3)
+    # since we are doing this way the loss and accuracy will not work properly
 
     network = fully_connected(network, 100, activation='tanh')
     network = dropout(network, 0.5)
@@ -55,7 +58,7 @@ def convnet(config):
     # mean_squared_error or mean_pairwise_squared_error
     network = regression(network, optimizer='adam', loss=tf.losses.mean_squared_error, learning_rate=1e-3, name='targets')
 
-    model = tflearn.DNN(network, checkpoint_path='model_alexnet', max_checkpoints=1, tensorboard_verbose=2, tensorboard_dir='log')
+    model = tflearn.DNN(network, checkpoint_path='model_convnet', max_checkpoints=1, tensorboard_verbose=2, tensorboard_dir='log')
 
     return model
 
@@ -84,9 +87,10 @@ def train_convnet(model, input, test, config):
 
     test_Y = [i[2] for i in test] # future areas
 
-    model.fit([X, X1, X2, X3, X4], Y, n_epoch=8, validation_set=([test_X, test_X1, test_X2, test_X3, test_X4], test_Y), snapshot_step=500, show_metric=True, run_id='agario-alexnet.model')
+    # start using less epoch since we are going to use a lot of data
+    model.fit([X, X1, X2, X3, X4], Y, n_epoch=1, validation_set=([test_X, test_X1, test_X2, test_X3, test_X4], test_Y), snapshot_step=500, show_metric=True, run_id='agario-convnet.model')
     
-    model.save('agario-alexnet.model')
+    model.save('agario-convnet.model')
 
 def show_images(input, test, config):
     input_frames = np.array([i[5] for i in input]).reshape(-1, config.sample_height, config.sample_width, config.sample_depth)
@@ -104,10 +108,10 @@ def show_images(input, test, config):
 
     cv2.destroyWindow('test')
 
-if __name__ == '__main__':
+def create_model(filename):
     config = Config()
     
-    train_data = np.load('training_data.npy')
+    train_data = np.load(filename)
     test_data_len = len(train_data) // 10
     #print(test_data_len)
     input = train_data[:-test_data_len]
