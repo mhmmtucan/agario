@@ -39,20 +39,20 @@ def convnet(config):
     
     network = conv_2d(network, 64, 5, activation='relu') # h = 90, w = 150, d = 64
     network = batch_normalization(network)
-    network = conv_2d(network, 64, 5, activation='tanh') # h = 90, w = 150, d = 64
+    network = conv_2d(network, 64, 5, activation='relu') # h = 90, w = 150, d = 64
     network = batch_normalization(network)
     network = max_pool_2d(network, 3, strides=2) # h = 45, w = 75, d = 64 
     #network = tf.add(network, side_network);
 
     network = conv_2d(network, 64, 3, activation='relu') # h = 45, w = 75, d = 64
     network = batch_normalization(network)
-    network = conv_2d(network, 64, 3, activation='tanh') # h = 45, w = 75, d = 64
+    network = conv_2d(network, 64, 3, activation='relu') # h = 45, w = 75, d = 64
     network = batch_normalization(network)
     network = max_pool_2d(network, 3, strides=2) # h = 23, w = 38, d = 64
 
     network = conv_2d(network, 64, 3, activation='relu') # h = 23, w = 38, d = 64
     network = batch_normalization(network)
-    network = conv_2d(network, 64, 3, activation='tanh') # h = 23, w = 38, d = 64
+    network = conv_2d(network, 64, 3, activation='relu') # h = 23, w = 38, d = 64
     network = batch_normalization(network)
     network = max_pool_2d(network, 3, strides=2) # h = 12, w = 19, d = 64
 
@@ -65,14 +65,14 @@ def convnet(config):
     #network = tf.concat([network, side_network1, side_network2, side_network3, side_network4], axis=3)
     # since we are doing this way the loss and accuracy will not work properly
 
-    network = fully_connected(network, 100, activation='tanh')
+    network = fully_connected(network, 100, activation='relu')
     network = dropout(network, 0.5)
 
-    network = fully_connected(network, 50, activation='tanh')
+    network = fully_connected(network, 50, activation='relu')
     network = dropout(network, 0.5)
 
     #network = fully_connected(network, config.actions, activation='softmax') # frame -> mouse
-    network = fully_connected(network, 5, activation='tanh') # frame -> future area
+    network = fully_connected(network, 5, activation='relu') # frame -> future area
 
     # need to write custom loss function, categorical crossentropy is good for binary classification
     # mean_squared_error or mean_pairwise_squared_error
