@@ -1,12 +1,16 @@
 import time
 import platform
 import pyautogui
-
 import numpy as np
-
+import random
+import threading
+from pynput.keyboard import Key, Listener
 from scipy.spatial import distance as dist
+from queue import Queue
 
 platform_name = platform.system()
+
+
 if platform_name == 'Windows':
     import win32api as wapi
 elif platform_name == 'Linux':
@@ -15,6 +19,23 @@ elif platform_name == 'Darwin':
     print('mac platform')
 else:
     print('unrecognized platform')
+
+def get_unix_keys(queue):
+    if platform_name != 'Windows':
+        def on_release(key):
+            unix_keys = []
+            if key == Key.space:
+                unix_keys.append(' ')
+            else:
+                try:
+                    unix_keys.append(key.char)
+                except: pass
+            queue.put(unix_keys)
+
+        listener = Listener(on_release=on_release)
+        listener.daemon = True
+        listener.start()
+        listener.join()
 
 class Config:
     def __init__(self):
@@ -109,3 +130,4 @@ class ExperienceBuffer:
 
     def save(self, filename):
         np.save(filename, self.buffer)
+
