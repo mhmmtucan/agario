@@ -100,3 +100,16 @@ ENV/
 # mypy
 .mypy_cache/
 .idea/
+
+# visual studio files
+.vs/
+*.sln
+*.pyproj
+
+# training files and folder
+*.npy
+trained-data/
+trained-data/*.npy
+
+# training log folder
+log/
