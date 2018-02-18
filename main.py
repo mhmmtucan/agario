@@ -42,10 +42,10 @@ def main(queue=None):
         #filename = 'trained-data/data.npy'
         start_collecting(filename, queue)
 
-    combine_data(foldername, outfilename)
-    print_data(outfilename)
-    print_size(outfilename)
-    print_play(outfilename)
+    #combine_data(foldername, outfilename)
+    #print_data(outfilename)
+    #print_size(outfilename)
+    #print_play(outfilename)
     create_model(outfilename)
 
 if __name__ == '__main__':
