@@ -9,6 +9,7 @@ from utils import Config
 from utils import InputCheck
 from utils import ExperienceBuffer
 from frame.frame_processor import process, processV2
+from utils import platform_name
 
 def fix_data(filename):
     experience_buffer = ExperienceBuffer()
@@ -70,7 +71,7 @@ def convert_data(areas, frames, mouses, spaces):
 
     return episode_buffer
 
-def start_collecting(filename):
+def start_collecting(filename,queue):
     #fix_data('training_data.npy')
 
     config = Config()
@@ -89,6 +90,7 @@ def start_collecting(filename):
     spaces= [] # every element will be an binary integer 0 or 1
 
     base_color = []
+    unix_keys = []
     first_time = True
 
     # wait 5 seconds to hide the terminal and start the game
@@ -99,8 +101,11 @@ def start_collecting(filename):
 
     # main loop
     while True:
-        keys = ic.get_keys()
-
+        if platform_name == 'Windows':
+            keys = ic.get_keys()
+        else:
+            keys = []
+            unix_keys = queue.get()
         if paused == False:
             image = np.array(sct.grab(monitor=config.roi), dtype='uint8')
 
@@ -118,20 +123,22 @@ def start_collecting(filename):
             frames.append(frame)
             mouses.append(ic.get_mouse_vector(pyautogui.position()))
             # should space elemnts be 1x1 lists or normal integer
-            if ' ' in keys:
+            if ' ' in keys or ' ' in unix_keys:
+                print("space")
                 spaces.append(1)
             else:
                 spaces.append(0)
 
             # also get the space key hits
 
-        if 'Q' in keys:
+        if 'Q' in keys or 'q' in unix_keys:
             print('quit processing')
             break
 
-        if 'P' in keys: # pause            
+        if 'P' in keys or 'p' in unix_keys: # pause
             print('pause the processing')
             paused = True
+
             base_color = []
 
             print('processing the user experience started')
@@ -145,7 +152,7 @@ def start_collecting(filename):
                 session_buffer = ExperienceBuffer(max_buffer_size)
                 print('experience buffer is full')
 
-        if 'C' in keys: # continue
+        if 'C' in keys or 'c' in unix_keys: # continue
             print('continue processing')
             paused = False
             base_color = []
