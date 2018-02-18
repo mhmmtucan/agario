@@ -1,5 +1,7 @@
 # try to find better names for packages and modules
 
+import uuid 
+
 from utils import Config
 from utils import InputCheck
 from utils import ExperienceBuffer
@@ -9,6 +11,7 @@ from data.check_data import print_play
 from data.check_data import print_size
 
 from data.data_collector import fix_data
+from data.data_collector import combine_data
 from data.data_collector import convert_data
 from data.data_collector import start_collecting
 
@@ -22,11 +25,21 @@ from network.network import create_model
 from network.network import train_convnet
 
 if __name__ == '__main__':
-    # use unique string to get new file name everytime
-    # otherwise the datas fro previous sessions will be lost
+    foldername = './trained-data/'
+    outfilename = 'trained_data.npy'
 
-    filename = 'trained-data/data.npy'
+    collect_data = False
 
-    #start_collecting(filename)
-    #print_data(filename)
-    create_model(filename)
+    if collect_data:
+        # use unique string to get new file name everytime
+        # otherwise the datas fro previous sessions will be lost
+        filename = foldername + str(uuid.uuid4()) + '.npy'
+        #filename = 'trained-data/data.npy'
+
+        start_collecting(filename)
+
+    combine_data(foldername, outfilename)
+    print_data(outfilename)
+    print_size(outfilename)
+    print_play(outfilename)
+    create_model(outfilename)

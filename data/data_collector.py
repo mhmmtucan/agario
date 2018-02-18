@@ -1,3 +1,4 @@
+import os
 import cv2
 import time
 import pyautogui
@@ -9,6 +10,14 @@ from utils import Config
 from utils import InputCheck
 from utils import ExperienceBuffer
 from frame.frame_processor import process, processV2
+
+def combine_data(foldername, outfilename):
+    combined_data = []
+    for file in os.listdir(foldername):
+        new_data = np.load(foldername + file)
+        combined_data.extend(new_data)
+    
+    np.save(outfilename, np.reshape(np.array(combined_data), [-1, 6]))
 
 def fix_data(filename):
     experience_buffer = ExperienceBuffer()
@@ -140,8 +149,9 @@ def start_collecting(filename):
             session_buffer.save(filename)
 
             print('processing the user experience finnished')
+            print('experience length: {}'.format(session_buffer.length()))
 
-            if session_buffer.length == max_buffer_size:
+            if session_buffer.length() == max_buffer_size:
                 session_buffer = ExperienceBuffer(max_buffer_size)
                 print('experience buffer is full')
 
