@@ -19,7 +19,7 @@ from tflearn.layers.estimator import regression
 from tflearn.layers.normalization import batch_normalization
 from tflearn.layers.normalization import local_response_normalization
 
-# tensorboard --logdir=foo:C:/Users/H/Desktop/ai-gaming/log
+# tensorboard --logdir=foo:C:/Users/malkoch/Desktop/Github/agario/log
 
 def convnet(config):
     network = input_data(shape=[None, config.sample_height, config.sample_width, config.sample_depth], name='input') # h = 90, w = 150, d = 1
@@ -52,8 +52,8 @@ def convnet(config):
     network = batch_normalization(network)
     network = max_pool_2d(network, 3, strides=2) # h = 12, w = 19, d = 64
 
-    network = fully_connected(network, 100, activation='relu')
-    network = dropout(network, 0.5)
+    #network = fully_connected(network, 100, activation='relu')
+    #network = dropout(network, 0.5)
 
     network = fully_connected(network, 50, activation='relu')
     network = dropout(network, 0.5)
@@ -90,9 +90,28 @@ def train_convnet(model, input, test, config):
 
     test_Y = [i[2] for i in test] # future areas
 
-    model.fit([X, XSide], Y, n_epoch=6, validation_set=([test_X, test_XSide], test_Y), snapshot_step=500, show_metric=True, run_id='agario-convnet.model')
+    model.fit([X, XSide], Y, n_epoch=10, validation_set=([test_X, test_XSide], test_Y), snapshot_step=500, show_metric=True, run_id='agario-convnet.model')
     
     model.save('agario-convnet.model')
+    print('saved the model')
+
+def check_model(model, data):
+    model.load('agario-convnet.model')
+    print('loaded the model')
+
+    for sample in data:
+        past_areas = np.array(sample[0]).reshape(-1, 5)
+        current_area = np.array(sample[1]).reshape(-1, 1)
+        future_areas = np.array(sample[2]).reshape(-1, 5)
+        mouse = np.array(sample[3]).reshape(-1, 9)
+        space = np.array(sample[4]).reshape(-1, 1)
+        current_frame = np.array(sample[5]).reshape(-1, 90, 150, 1)
+
+        main_input = current_frame
+        side_input = np.concatenate([past_areas, current_area, mouse, space], axis=1).reshape(-1, 16)
+
+        prediction = model.predict([main_input, side_input])
+        print('prediction: {}, real value: {}'.format(prediction[0], future_areas[0]))
 
 def show_images(input, test, config):
     input_frames = np.array([i[5] for i in input]).reshape(-1, config.sample_height, config.sample_width, config.sample_depth)
@@ -128,5 +147,7 @@ def create_model(filename):
     model = convnet(config)
     print('created the model')
 
-    train_convnet(model, input, test, config)
-    print('trained the model')
+    check_model(model, train_data)
+
+    #train_convnet(model, input, test, config)
+    #print('trained the model')
