@@ -3,6 +3,7 @@ import random
 import platform
 import pyautogui
 import numpy as np
+import subprocess
 
 from pynput.keyboard import Key
 from pynput.keyboard import Listener
@@ -19,6 +20,11 @@ elif platform_name == 'Darwin':
     print('mac platform')
 else:
     print('unrecognized platform')
+
+def say(text):
+    if platform_name == 'Darwin':
+        subprocess.call('say ' + text, shell=True)
+    else: pass
 
 def get_unix_keys(queue):
     if platform_name != 'Windows':

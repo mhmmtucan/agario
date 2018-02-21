@@ -31,46 +31,45 @@ from network.network import convnet
 from network.network import create_model
 from network.network import train_convnet
 
-def collect(queue=None):
-    foldername = './training-data/'
-    outfilename = 'training-data.npy'
+foldername = './training-data/'
+outfilename = 'training-data.npy'
 
+def collect(queue=None):
     filename = foldername + str(uuid.uuid4()) + '.npy'
     start_collecting(filename, queue)
-    
+
+def combine():
     combine_data(foldername, outfilename)
 
 def train():
-    training_file = 'training-data.npy'
-    create_model(training_file)
-
-    #print_data(training_file)
-    #print_size(training_file)
-    #print_play(training_file)
+    create_model(outfilename)
+    #print_data(outfilename)
+    #print_size(outfilename)
+    #print_play(outfilename)
 
 def control(queue=None):
     controller = Controller(queue)
     controller.start_playing()
 
 if __name__ == '__main__':
-    collect_data = True
-    train_net = False
-    test_controller = False
+    one_hot = [1,0,0,0]
+    a, b, c, d = [one_hot[i] == 1 for i in range(4)]
 
     if platform_name != 'Windows':
-        if train_net:
-            train()
+        if c: train()
+        elif b: combine()
         else:
             queue = Queue()
-            if collect_data:
+            if a:
                 main_thread = threading.Thread(target=collect, args=(queue,))
                 main_thread.start()
-            elif test_controller:
+            elif d:
                 main_thread = threading.Thread(target=control, args=(queue,))
                 main_thread.start()
 
             get_unix_keys(queue)
     else:
-        if collect_data: collect()
-        elif train_net: train()
-        elif test_controller: control()
+        if a: collect()
+        elif b: combine()
+        elif c: train()
+        elif d: control()

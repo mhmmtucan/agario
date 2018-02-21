@@ -7,6 +7,7 @@ import numpy as np
 
 from mss import mss
 
+from utils import say
 from utils import Config
 from utils import InputCheck
 from utils import platform_name
@@ -18,6 +19,8 @@ from frame.frame_processor import processV2
 def combine_data(foldername, outfilename):
     combined_data = []
     for file in os.listdir(foldername):
+        if file == '.DS_Store':
+            continue
         new_data = np.load(foldername + file)
         combined_data.extend(new_data)
     
@@ -109,8 +112,9 @@ def start_collecting(filename, queue):
     print("Open agar.io in 5 seconds")
     for i in range(5,0,-1):
         print(i)
+        say(str(i))
         time.sleep(1)
-
+    say("game started")
     # main loop
     while True:
         if platform_name == 'Windows':
@@ -145,10 +149,12 @@ def start_collecting(filename, queue):
 
         if 'Q' in keys or 'q' in unix_keys:
             print('quit processing')
+            say("quit")
             break
 
         if 'P' in keys or 'p' in unix_keys: # pause
             print('pause the processing')
+            say("pause")
             paused = True
 
             base_color = []
@@ -164,9 +170,18 @@ def start_collecting(filename, queue):
             if session_buffer.length() == max_buffer_size:
                 session_buffer = ExperienceBuffer(max_buffer_size)
                 print('experience buffer is full')
+                say("buffer is full")
+
+        if 'N' in keys or 'n' in unix_keys: # pause w/o saving
+            print('processing paused - without saving')
+            say("not saved")
+            paused = True
+            base_color = []
+
 
         if 'C' in keys or 'c' in unix_keys: # continue
             print('continue processing')
+            say("continue")
             paused = False
             base_color = []
 

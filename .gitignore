@@ -115,3 +115,10 @@ trained-data/*.npy
 
 # training log folder
 log/
+*.data-00000-of-00001
+
+*.index
+
+*.meta
+
+checkpoint
