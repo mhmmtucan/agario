@@ -31,33 +31,45 @@ from network.network import convnet
 from network.network import create_model
 from network.network import train_convnet
 
-def main(queue=None):
+def collect(queue=None):
     foldername = './trained-data/'
     outfilename = 'trained_data.npy'
 
-    controller = Controller()
-    controller.start_playing()
-
-    #collect_data = False
-
-    '''if collect_data:
-        # use unique string to get new file name everytime
-        # otherwise the datas fro previous sessions will be lost
-        filename = foldername + str(uuid.uuid4()) + '.npy'
-        #filename = 'trained-data/data.npy'
-        start_collecting(filename, queue)'''
+    filename = foldername + str(uuid.uuid4()) + '.npy'
+    start_collecting(filename, queue)
     
-    #combine_data(foldername, outfilename)
+    combine_data(foldername, outfilename)
     #print_data(outfilename)
     #print_size(outfilename)
     #print_play(outfilename)
-    #create_model(outfilename)
+
+def train():
+    outfilename = 'trained_data.npy'
+    create_model(outfilename)
+
+def control(queue=None):
+    controller = Controller(queue)
+    controller.start_playing()
 
 if __name__ == '__main__':
+    collect_data = False
+    train_net = False
+    test_controller = False
+
     if platform_name != 'Windows':
-        queue = Queue()
-        main_thread = threading.Thread(target=main, args=(queue,))
-        main_thread.start()
-        get_unix_keys(queue)
+        if train_net:
+            train()
+        else:
+            queue = Queue()
+            if collect_data:
+                main_thread = threading.Thread(target=collect, args=(queue))
+                main_thread.start()
+            elif test_controller:
+                main_thread = threading.Thread(target=control, args=(queue))
+                main_thread.start()
+
+            get_unix_keys(queue)
     else:
-        main()
+        if collect_data: collect()
+        elif train_net: train()
+        elif test_controller: control()

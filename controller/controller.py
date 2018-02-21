@@ -7,6 +7,7 @@ from mss import mss
 
 from utils import Config
 from utils import InputCheck
+from utils import platform_name
 
 from frame.frame_processor import processV2
 
@@ -17,11 +18,12 @@ from network.network import convnet
 from scipy.spatial import distance as dist
 
 class Controller:
-    def __init__(self):
+    def __init__(self,queue):
         self.config = Config()
         self.model = convnet(self.config)
         self.model.load('agario-convnet.model')
         self.recorder = Recorder()
+        self.queue = queue
 
     def start_playing(self):
         paused = True
@@ -42,7 +44,11 @@ class Controller:
 
         # main loop
         while True:
-            keys = ic.get_keys()
+            if platform_name == 'Windows':
+                keys = ic.get_keys()
+            else:
+                keys = []
+                unix_keys = self.queue.get()
 
             if paused == False:
                 image = np.array(sct.grab(monitor=self.config.roi), dtype='uint8')
@@ -84,16 +90,16 @@ class Controller:
             else:
                 print('waiting the user to start the game')
 
-            if 'Q' in keys:
+            if 'Q' in keys or 'q' in unix_keys:
                 print('quit playing')
                 break
 
-            if 'P' in keys: # pause
+            if 'P' in keys or 'p' in unix_keys: # pause
                 print('pause the playing')
                 paused = True
                 base_color = []
 
-            if 'C' in keys: # continue
+            if 'C' in keys or 'c' in unix_keys: # continue
                 print('continue playing')
                 paused = False
                 base_color = []

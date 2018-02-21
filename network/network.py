@@ -38,7 +38,7 @@ def convnet(config):
     #network = conv_2d(network, 64, 5, activation='relu') # h = 90, w = 150, d = 64
     #network = batch_normalization(network)
     network = max_pool_2d(network, 3, strides=2) # h = 45, w = 75, d = 64 
-    network = tf.add(network, side_network);
+    network = tf.add(network, side_network)
 
     network = conv_2d(network, 64, 3, activation='relu') # h = 45, w = 75, d = 64
     network = batch_normalization(network)

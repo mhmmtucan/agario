@@ -2,11 +2,7 @@ import time
 import random
 import platform
 import pyautogui
-import threading
-
 import numpy as np
-
-from queue import Queue
 
 from pynput.keyboard import Key
 from pynput.keyboard import Listener
@@ -28,6 +24,7 @@ def get_unix_keys(queue):
     if platform_name != 'Windows':
         def on_release(key):
             unix_keys = []
+
             if key == Key.space:
                 unix_keys.append(' ')
             else:

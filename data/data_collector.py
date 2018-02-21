@@ -118,6 +118,7 @@ def start_collecting(filename, queue):
         else:
             keys = []
             unix_keys = queue.get()
+
         if paused == False:
             image = np.array(sct.grab(monitor=config.roi), dtype='uint8')
 
@@ -136,7 +137,6 @@ def start_collecting(filename, queue):
             mouses.append(ic.get_mouse_vector(pyautogui.position()))
             # should space elemnts be 1x1 lists or normal integer
             if ' ' in keys or ' ' in unix_keys:
-                print("space")
                 spaces.append(1)
             else:
                 spaces.append(0)
