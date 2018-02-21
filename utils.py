@@ -22,6 +22,7 @@ else:
 
 def get_unix_keys(queue):
     if platform_name != 'Windows':
+
         def on_release(key):
             unix_keys = []
 
@@ -30,8 +31,10 @@ def get_unix_keys(queue):
             else:
                 try:
                     unix_keys.append(key.char)
+                    queue.put(unix_keys)
+                    if key.char == 'q':
+                        return False
                 except: pass
-            queue.put(unix_keys)
 
         listener = Listener(on_release=on_release)
         listener.daemon = True

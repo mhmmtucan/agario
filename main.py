@@ -1,6 +1,6 @@
 # try to find better names for packages and modules
 
-import uuid 
+import uuid
 import threading
 
 from queue import Queue
@@ -32,27 +32,28 @@ from network.network import create_model
 from network.network import train_convnet
 
 def collect(queue=None):
-    foldername = './trained-data/'
-    outfilename = 'trained_data.npy'
+    foldername = './training-data/'
+    outfilename = 'training-data.npy'
 
     filename = foldername + str(uuid.uuid4()) + '.npy'
     start_collecting(filename, queue)
     
     combine_data(foldername, outfilename)
-    #print_data(outfilename)
-    #print_size(outfilename)
-    #print_play(outfilename)
 
 def train():
-    outfilename = 'trained_data.npy'
-    create_model(outfilename)
+    training_file = 'training-data.npy'
+    create_model(training_file)
+
+    #print_data(training_file)
+    #print_size(training_file)
+    #print_play(training_file)
 
 def control(queue=None):
     controller = Controller(queue)
     controller.start_playing()
 
 if __name__ == '__main__':
-    collect_data = False
+    collect_data = True
     train_net = False
     test_controller = False
 
@@ -62,10 +63,10 @@ if __name__ == '__main__':
         else:
             queue = Queue()
             if collect_data:
-                main_thread = threading.Thread(target=collect, args=(queue))
+                main_thread = threading.Thread(target=collect, args=(queue,))
                 main_thread.start()
             elif test_controller:
-                main_thread = threading.Thread(target=control, args=(queue))
+                main_thread = threading.Thread(target=control, args=(queue,))
                 main_thread.start()
 
             get_unix_keys(queue)

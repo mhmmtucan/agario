@@ -147,7 +147,7 @@ def create_model(filename):
     model = convnet(config)
     print('created the model')
 
-    check_model(model, train_data)
+    train_convnet(model, input, test, config)
+    print('trained the model')
 
-    #train_convnet(model, input, test, config)
-    #print('trained the model')
+    check_model(model, train_data)

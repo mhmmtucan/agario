@@ -108,6 +108,8 @@ ENV/
 
 # training files and folder
 *.npy
+training-data/
+training-data/*.npy
 trained-data/
 trained-data/*.npy
 
