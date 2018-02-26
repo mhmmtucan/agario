@@ -33,9 +33,10 @@ def processV2(image, base_color, config):
 
     gray = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
     thresh = cv2.threshold(gray, 30, 255, cv2.THRESH_BINARY)[1]
-
+    #thresh = cv2.GaussianBlur(thresh, (3, 3), 0)
     resized_image = cv2.bitwise_and(resized_image,resized_image,mask=thresh)
-    cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+    cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = cnts[0] if im.is_cv2() else cnts[1]
 
     height, width = resized_image.shape[:2]
@@ -72,9 +73,8 @@ def processV2(image, base_color, config):
             go = GameObject(center=(cX, cY), radius=radius, area=area, contour=c)
 
             d = dist.euclidean((center_x, center_y), (cX, cY))
-            if resized_image.shape[1]/4 < cX and cX < resized_image.shape[1] * 3 / 4 and \
-                    resized_image.shape[0] / 4 < cY and cY < resized_image.shape[0] * 3 / 4 :
 
+            if width/5 < cX and cX < width* 4/5 and height/5 < cY and cY < height * 4/5 :
                 colors = np.array((resized_image[cY - 2, cX + 2], resized_image[cY - 2, cX - 2],
                                    resized_image[cY + 2, cX - 2], resized_image[cY + 2, cX + 2],
                                    resized_image[cY, cX + 2], resized_image[cY, cX - 2],
@@ -82,11 +82,13 @@ def processV2(image, base_color, config):
                                    resized_image[cY, cX]), np.uint8)
                 colors = stats.mode(colors)[0][0]
 
-            if np.array_equal(colors, base_color) and radius > 13:
+            if len([el for el in [abs(base_color[i]) - abs(num) for i, num in enumerate(colors[:3])] if el < 5]) == 3 and radius > 13:
                 # main object
                 if d < min_dist[0] and radius > 13:
                     min_dist = (d, len(main_objects))
                 main_objects.append(go)
+                cv2.putText(resized_image, str(base_color[0]) + " " + str(base_color[1]) + " " + str(base_color[2]),
+                            (5, 60),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 1)
             else:
                 # scene objects
                 if d < min_dist_scene[0] and radius > 13:
@@ -98,6 +100,7 @@ def processV2(image, base_color, config):
     else:
         num_of_objects = len(main_objects)
         if num_of_objects == 0:
+            # main object collide with different color object
             main_objects.append(scene_objects[min_dist_scene[1]])
             del scene_objects[min_dist_scene[1]]
             num_of_objects = len(main_objects)
@@ -112,35 +115,52 @@ def processV2(image, base_color, config):
 
         if solidity < 0.9:
             num_of_objects = len(main_objects) + 1
-
+            main_obj.area /= 2
+            main_obj.radius /= 2
+            '''
+            for m_obj in main_objects:
+                if not cv2.isContourConvex(m_obj.contour):
+                    hull = cv2.convexHull(m_obj.contour, returnPoints=False)
+                    defects = cv2.convexityDefects(m_obj.contour, hull)
+                    for i in range(defects.shape[0]):
+                        s, e, f, d = defects[i, 0]
+                        start = tuple(m_obj.contour[s][0])
+                        end = tuple(m_obj.contour[e][0])
+                        far = tuple(m_obj.contour[f][0])
+                        cv2.line(resized_image, start, end, [0, 255, 0], 2)
+                        cv2.circle(resized_image, far, 5, [0, 0, 255], -1)
+            '''
         # if num_of_object is 1 and solidity below 0.90 then there is a collision
-        #cv2.putText(resized_image, "Solidity: "+str(round(solidity, ndigits=2)), (5, 20),
-        #            cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 1)
-        #cv2.putText(resized_image, "Number of objects: "+str(num_of_objects), (5, 40),
-        #            cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 1)
+        cv2.putText(resized_image, "Solidity: "+str(round(solidity, ndigits=2)), (5, 20),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 1)
+        cv2.putText(resized_image, "Number of objects: "+str(num_of_objects), (5, 40),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 1)
 
         for i, obj in enumerate(main_objects):
             # main character
-            cv2.drawContours(resized_image, [obj.contour], -1, (255, 255, 255), -1)
+            cv2.drawContours(resized_image, [obj.contour], 0, (255, 255, 255), -1)
             #cv2.putText(resized_image, str(int(obj.radius)), (obj.center[0] - 2, obj.center[1] + 5), cv2.FONT_HERSHEY_SIMPLEX, .5, (0, 0, 0))
+            cv2.putText(resized_image, "Object " + str(i+1) +  " radius: " + str(obj.radius // 1), (5, i*20+80),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 1)
 
         for i, obj in enumerate(scene_objects):
-            if obj.area * 139 / 100 < main_obj.area:
+            if obj.radius < 13 or (obj.area * 139 / 100 < main_obj.area and width/5 < obj.center[0] and obj.center[0] < width* 4/5 and
+                    height/5 < obj.center[1] and obj.center[1] < height * 4/5):
                 if np.array_equal(resized_image[obj.center[1], obj.center[0]], [51, 255, 0, 255]) and obj.radius > 13:
                     # might be virus
-                    cv2.drawContours(resized_image, [obj.contour], -1, (0, 0, 255), -1)
+                    cv2.drawContours(resized_image, [obj.contour], 0, (0, 0, 255), -1)
                 else:
                     # can eat
-                    cv2.drawContours(resized_image, [obj.contour], -1, (0, 255, 0), -1)
+                    cv2.drawContours(resized_image, [obj.contour], 0, (0, 255, 0), -1)
                     # cv2.putText(resized_image, str(int(obj.radius)), (obj.center[0] - 2, obj.center[1] + 5), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 255, 255))
             else:
                 # can not eat
-                cv2.drawContours(resized_image, [obj.contour], -1, (0, 0, 255), -1)
+                cv2.drawContours(resized_image, [obj.contour], 0, (0, 0, 255), -1)
                 # cv2.putText(resized_image, str(int(obj.radius)), (obj.center[0] - 2, obj.center[1] + 5), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 255, 255))
 
-    return cv2.cvtColor(cv2.resize(resized_image, (config.sample_width, config.sample_height)), cv2.COLOR_BGRA2GRAY), main_obj.area, base_color
+    return resized_image, cv2.cvtColor(cv2.resize(resized_image, (config.sample_width, config.sample_height)), cv2.COLOR_BGRA2GRAY), main_obj.radius, base_color
 
-
+'''
 def process(image, base_color, config):
     # resize the image so processing will be faster
     resized_image = im.resize(image, width=image.shape[1] // 2)
@@ -259,3 +279,4 @@ def process(image, base_color, config):
     # consider returning grayscale image
 
     return cv2.cvtColor(cv2.resize(resized_image, (config.sample_width, config.sample_height)), cv2.COLOR_BGRA2GRAY), main_obj.area, base_color
+'''

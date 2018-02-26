@@ -11,25 +11,23 @@ class Recorder:
         self.h = None
         self.w = None
     
-    def Record(self, images, recordResized=True):
+    def Record(self, images, filename, recordResized=True):
         if self.writer is None:
-            (self.h, self.w) = images[0].shape[:2]
-
             if recordResized:
-                self.writer = cv2.VideoWriter("./videos/" + time.asctime(time.localtime(time.time())) + '.avi',
-                                              self.fourcc, 10, (self.w , self.h), True)
+                (self.h, self.w) = images.shape[:2]
+                self.writer = cv2.VideoWriter(filename + '.avi', self.fourcc, 10, (self.w , self.h), True)
             else:
-                self.writer = cv2.VideoWriter("./videos/" + time.asctime(time.localtime(time.time())) + '.avi',
-                                              self.fourcc, 10, (self.w * 2, self.h * 2), True)
+                (self.h, self.w) = images[0].shape[:2]
+                self.writer = cv2.VideoWriter(filename + '.avi', self.fourcc, 10, (self.w * 2, self.h * 2), True)
 
         if recordResized:
             output = np.zeros((self.h, self.w, 3), dtype="uint8")
-            if len(images[3].shape) == 2:
-                images[3] = cv2.cvtColor(images[3], cv2.COLOR_GRAY2BGR)
-            elif len(images[3].shape) == 3:
-                if images[3].shape[2] == 4:
-                    images[3] = cv2.cvtColor(images[3], cv2.COLOR_BGRA2BGR)
-            output[0: self.h, 0: self.w] = images[3]
+            if len(images.shape) == 2:
+                images = cv2.cvtColor(images, cv2.COLOR_GRAY2BGR)
+            elif len(images.shape) == 3:
+                if images.shape[2] == 4:
+                    images = cv2.cvtColor(images, cv2.COLOR_BGRA2BGR)
+            output[0: self.h, 0: self.w] = images
 
         else:
             output = np.zeros((self.h * 2, self.w * 2, 3), dtype="uint8")

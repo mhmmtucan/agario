@@ -20,7 +20,6 @@ from data.data_collector import combine_data
 from data.data_collector import convert_data
 from data.data_collector import start_collecting
 
-from frame.frame_processor import process
 from frame.frame_processor import processV2
 
 from frame.Recorder import Recorder
@@ -34,9 +33,15 @@ from network.network import train_convnet
 foldername = './training-data/'
 outfilename = 'training-data.npy'
 
-def collect(queue=None):
-    filename = foldername + str(uuid.uuid4()) + '.npy'
-    start_collecting(filename, queue)
+def collectRaw(queue=None):
+    foldername = './raw_data/'
+    filename = foldername + str(uuid.uuid4())
+    start_collecting(filename, queue, True)
+
+def collectLive(queue=None):
+    foldername = './videos/'
+    filename = foldername + str(uuid.uuid4())
+    start_collecting(filename, queue, False)
 
 def combine():
     combine_data(foldername, outfilename)
@@ -52,24 +57,28 @@ def control(queue=None):
     controller.start_playing()
 
 if __name__ == '__main__':
-    one_hot = [1,0,0,0]
-    a, b, c, d = [one_hot[i] == 1 for i in range(4)]
+    one_hot = [0,1,0,0,0]
+    a, b, c, d, e = [one_hot[i] == 1 for i in range(5)]
 
     if platform_name != 'Windows':
-        if c: train()
-        elif b: combine()
+        if d: train()
+        elif c: combine()
         else:
             queue = Queue()
             if a:
-                main_thread = threading.Thread(target=collect, args=(queue,))
+                main_thread = threading.Thread(target=collectRaw, args=(queue,))
                 main_thread.start()
-            elif d:
+            if b:
+                main_thread = threading.Thread(target=collectLive, args=(queue,))
+                main_thread.start()
+            elif e:
                 main_thread = threading.Thread(target=control, args=(queue,))
                 main_thread.start()
 
             get_unix_keys(queue)
     else:
-        if a: collect()
-        elif b: combine()
-        elif c: train()
-        elif d: control()
+        if a: collectRaw()
+        elif b: collectLive()
+        elif c: combine()
+        elif d: train()
+        elif e: control()
