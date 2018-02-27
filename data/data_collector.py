@@ -32,25 +32,25 @@ def fix_data(filename):
     print('loading data to fix')
     data = np.load(filename)
     for d in data:
-        past_areas = d[0]
-        current_area = d[1]
-        future_areas = d[2]
+        past_diameters = d[0]
+        current_diameter = d[1]
+        future_diameters = d[2]
         mouse = d[3]
         space = d[4]
         current_frame = d[5]
 
-        past_areas = np.array(past_areas).reshape(5)
-        current_area = np.array([current_area]).reshape(1)
-        future_areas = np.array(future_areas).reshape(5)
+        past_diameters = np.array(past_diameters).reshape(5)
+        current_diameter = np.array([current_diameter]).reshape(1)
+        future_diameters = np.array(future_diameters).reshape(5)
         mouse = np.array(mouse).reshape(9)
         space = np.array([space]).reshape(1)
 
-        experience_buffer.add(np.reshape(np.array([past_areas, current_area, future_areas, mouse, space, current_frame]), [1, 6]))
+        experience_buffer.add(np.reshape(np.array([past_diameters, current_diameter, future_diameters, mouse, space, current_frame]), [1, 6]))
 
     experience_buffer.save(filename)
     print('saved the fixed data')
 
-def convert_data(areas, frames, mouses, spaces):
+def convert_data(diameters, frames, mouses, spaces):
     episode_buffer = ExperienceBuffer()
 
     frame_num = len(frames)
@@ -60,30 +60,30 @@ def convert_data(areas, frames, mouses, spaces):
     # if we remove last five frame from the frames list we can have non-zero last areas
     # if we dont we can remove the frames after the character died so we could get rid of menu frames
     for i, frame in enumerate(frames):
-        past_areas = []
-        current_area = areas[i]
-        future_areas = []
+        past_diameter = []
+        current_diameter = diameters[i]
+        future_diameter = []
         current_frame = frames[i]
         mouse = mouses[i]
         space = spaces[i]
 
         if i < look_up:
-            past_areas = [0] * (look_up - i) + areas[0 : i]
+            past_diameter = [0] * (look_up - i) + diameters[0: i]
         else:
-            past_areas = areas[i - look_up : i]
+            past_diameter = diameters[i - look_up: i]
 
         if i >= frame_num - look_up:
-            future_areas = areas[i + 1 : frame_num] + [0] * (i + look_up - frame_num + 1)
+            future_diameter = diameters[i + 1: frame_num] + [0] * (i + look_up - frame_num + 1)
         else:
-            future_areas = areas[i + 1 : i + 6]
+            future_diameter = diameters[i + 1: i + 6]
 
-        past_areas = np.array(past_areas)
-        current_area = np.array([current_area])
-        future_areas = np.array(future_areas)
+        past_diameter = np.array(past_diameter)
+        current_diameter = np.array([current_diameter])
+        future_diameter = np.array(future_diameter)
         mouse = np.array(mouse)
         space = np.array([space])
 
-        episode_buffer.add(np.reshape(np.array([past_areas, current_area, future_areas, mouse, space, current_frame]), [1, 6]))
+        episode_buffer.add(np.reshape(np.array([past_diameter, current_diameter, future_diameter, mouse, space, current_frame]), [1, 6]))
 
     return episode_buffer
 
@@ -91,23 +91,15 @@ def start_collecting(filename, q, isRaw):
     #fix_data('training_data.npy')
 
     config = Config()
-
-    paused = True
     ic = InputCheck(config)
-
     max_buffer_size = 50000
     session_buffer = ExperienceBuffer(max_buffer_size)
-
     sct = mss()
 
-    areas = [] # every element will be a list with 5 elements
-    frames = [] # every element will be the processed version of the screen
-    mouses = [] # every element will be a tuple with 2 elements -> we can change this in to 1 x 8 one hot key vector
-    spaces= [] # every element will be an binary integer 0 or 1
-
     base_color = []
-    unix_keys = []
     first_time = True
+    paused = True
+
     print("Game started")
     say("game started")
     # main loop
@@ -131,18 +123,17 @@ def start_collecting(filename, q, isRaw):
 
             if isRaw:
                 raw_image = cv2.resize(image,(1280,720))
-                recorder.Record(raw_image, filename + "_f")
+                recorder.Record(raw_image, filename + "frames")
             else:
-                resized_image, frame, area, base_color = processV2(image, base_color, config)
-                # TODO: change area to radius
+                resized_image, frame, diam = processV2(image, base_color, config)
 
                 #cv2.imshow('frame', frame)
                 #cv2.moveWindow('frame', 0, 0)
                 #cv2.waitKey(1)
-                areas.append(area)
+                diameters.append(diam)
                 frames.append(frame)
 
-                recorder.Record(resized_image, filename + "_f")
+                #recorder.Record(resized_image, filename + "_f")
 
             mouses.append(ic.get_mouse_vector(pyautogui.position()))
             # should space elemnts be 1x1 lists or normal integer
@@ -168,7 +159,7 @@ def start_collecting(filename, q, isRaw):
 
             print('processing the user experience started')
             # create a function instead of this
-            session_buffer.add(convert_data(areas, frames, mouses, spaces).buffer)
+            session_buffer.add(convert_data(diameters, frames, mouses, spaces).buffer)
             session_buffer.save(filename+".npy")
 
             print('processing the user experience finnished')
@@ -189,15 +180,13 @@ def start_collecting(filename, q, isRaw):
             print('raw data saved')
             say("raw saved")
 
-            np.save(filename+"_m.npy",mouses)
-            np.save(filename+"_s.npy",spaces)
+            np.save(filename+"mouses.npy",mouses)
+            np.save(filename+"spaces.npy",spaces)
 
             foldername = './raw_data/'
-            filename = foldername + str(uuid.uuid4())
+            filename = foldername + str(uuid.uuid4()) + '/'
 
             paused = True
-            mouses = []
-            spaces = []
 
         if 'C' in keys or 'c' in unix_keys: # continue
             print('continue processing')
@@ -207,7 +196,67 @@ def start_collecting(filename, q, isRaw):
             recorder = Recorder()
 
             # restart everything
-            areas = [] # every element will be a list with 5 elements
-            frames = [] # every element will be the processed version of the screen
-            mouse_positions = [] # every element will be a tuple with 2 elements -> we can change this in to 1 x 8 one hot key vector
-            space_hits = [] # every element will be an binary integer 0 or 1
+            diameters = []  # every element will be a list with 5 elements
+            frames = []  # every element will be the processed version of the screen
+            mouses = []  # every element will be a tuple with 2 elements -> we can change this in to 1 x 8 one hot key vector
+            spaces = []  # every element will be an binary integer 0 or 1
+
+
+def combine_raw():
+    foldername = "./raw_data/"
+    try:
+        combined_raw = np.load("combined_raw.npy")
+        total_frame = len(combined_raw)
+        print("{} frame loaded",total_frame)
+    except:
+        combined_raw = []
+        total_frame = 0
+    config = Config()
+    chop_from_end = -10
+
+    for i, subfolder in enumerate(os.listdir(foldername)):
+        if subfolder == '.DS_Store':
+            continue
+
+        # fetch all required data
+        cap = cv2.VideoCapture(foldername + subfolder + '/frames.avi')
+        mouses = np.load(foldername + subfolder + '/mouses.npy')
+        spaces = np.load(foldername + subfolder + '/spaces.npy')
+        mouses = mouses[:chop_from_end]
+        spaces = spaces[:chop_from_end]
+        frames = []
+        diameters = []
+
+        frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        frame_count += chop_from_end
+
+        base_color = []
+        first_time = True
+
+        # process image
+        for j in range(int(frame_count)):
+            cap.set(cv2.CAP_PROP_POS_FRAMES,j)
+            _, image = cap.read()
+
+            if first_time:
+                base_color = image[image.shape[0] // 2, image.shape[1] // 2]
+                first_time = False
+
+            resized_image, frame, diam = processV2(image, base_color, config)
+
+            frames.append(frame)
+            diameters.append(diam)
+
+            #cv2.imshow("frame", resized_image)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        total_frame += frame_count
+        new_data = convert_data(diameters, frames, mouses, spaces).buffer
+        combined_raw.extend(new_data)
+
+        print("{} / {} folder finished".format(i + 1, len(os.listdir(foldername))))
+        print("{} / {} folder frame / total frame".format(frame_count,total_frame))
+        cap.release()
+
+    np.save("combined_raw.npy", np.reshape(np.array(combined_raw), [-1, 6]))
+    print("combined and processed data saved")

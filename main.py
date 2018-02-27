@@ -18,6 +18,7 @@ from data.check_data import print_size
 from data.data_collector import fix_data
 from data.data_collector import combine_data
 from data.data_collector import convert_data
+from data.data_collector import combine_raw
 from data.data_collector import start_collecting
 
 from frame.frame_processor import processV2
@@ -35,8 +36,8 @@ outfilename = 'training-data.npy'
 
 def collectRaw(queue=None):
     foldername = './raw_data/'
-    filename = foldername + str(uuid.uuid4())
-    start_collecting(filename, queue, True)
+    subfolder = foldername + str(uuid.uuid4()) + '/'
+    start_collecting(subfolder, queue, True)
 
 def collectLive(queue=None):
     foldername = './videos/'
@@ -57,28 +58,31 @@ def control(queue=None):
     controller.start_playing()
 
 if __name__ == '__main__':
-    one_hot = [0,1,0,0,0]
-    a, b, c, d, e = [one_hot[i] == 1 for i in range(5)]
+    # collect raw, combine raw, collect live, combine, train, control
+    one_hot = [0,1,0,0,0,0]
+    a, b, c, d, e, f = [one_hot[i] == 1 for i in range(6)]
 
     if platform_name != 'Windows':
-        if d: train()
-        elif c: combine()
+        if b: combine_raw()
+        elif d: combine()
+        elif e: train()
         else:
             queue = Queue()
             if a:
                 main_thread = threading.Thread(target=collectRaw, args=(queue,))
                 main_thread.start()
-            if b:
+            elif c:
                 main_thread = threading.Thread(target=collectLive, args=(queue,))
                 main_thread.start()
-            elif e:
+            elif f:
                 main_thread = threading.Thread(target=control, args=(queue,))
                 main_thread.start()
 
             get_unix_keys(queue)
     else:
         if a: collectRaw()
-        elif b: collectLive()
-        elif c: combine()
-        elif d: train()
-        elif e: control()
+        elif b: combine_raw()
+        elif c: collectLive()
+        elif d: combine()
+        elif e: train()
+        elif f: control()

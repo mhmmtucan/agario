@@ -52,7 +52,7 @@ class Controller:
 
             if paused == False:
                 image = np.array(sct.grab(monitor=self.config.roi), dtype='uint8')
-                self.recorder.Record([image, image, image, image])
+                #self.recorder.Record([image, image, image, image])
 
                 if first_time:
                     base_color = image[image.shape[0]//2,image.shape[1]//2]

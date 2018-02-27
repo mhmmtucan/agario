@@ -28,8 +28,9 @@ def processV2(image, base_color, config):
     num_of_objects = 0
     # resize the image so processing will be faster
     resized_image = im.resize(image, width=image.shape[1])
-    original_image = resized_image.copy()
-    ratio = image.shape[1] / resized_image.shape[1]  # it is bigger than one
+    #resized_image = cv2.resize(image, (0,0), fx=0.75, fy=0.75)
+    #original_image = resized_image.copy()
+    #ratio = image.shape[1] / resized_image.shape[1]  # it is bigger than one
 
     gray = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
     thresh = cv2.threshold(gray, 30, 255, cv2.THRESH_BINARY)[1]
@@ -158,7 +159,7 @@ def processV2(image, base_color, config):
                 cv2.drawContours(resized_image, [obj.contour], 0, (0, 0, 255), -1)
                 # cv2.putText(resized_image, str(int(obj.radius)), (obj.center[0] - 2, obj.center[1] + 5), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 255, 255))
 
-    return resized_image, cv2.cvtColor(cv2.resize(resized_image, (config.sample_width, config.sample_height)), cv2.COLOR_BGRA2GRAY), main_obj.radius, base_color
+    return resized_image, cv2.cvtColor(cv2.resize(resized_image, (config.sample_width, config.sample_height)), cv2.COLOR_BGRA2GRAY), main_obj.radius
 
 '''
 def process(image, base_color, config):

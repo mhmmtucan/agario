@@ -112,7 +112,8 @@ training-data/
 training-data/*.npy
 trained-data/
 trained-data/*.npy
-
+videos/
+raw_data
 # training log folder
 log/
 *.data-00000-of-00001
