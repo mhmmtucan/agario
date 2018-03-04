@@ -1,5 +1,5 @@
 # try to find better names for packages and modules
-
+import os
 import uuid
 import threading
 
@@ -36,8 +36,7 @@ outfilename = 'training-data.npy'
 
 def collectRaw(queue=None):
     foldername = './raw_data/'
-    subfolder = foldername + str(uuid.uuid4()) + '/'
-    start_collecting(subfolder, queue, True)
+    start_collecting(foldername, queue, True)
 
 def collectLive(queue=None):
     foldername = './videos/'

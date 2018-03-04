@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 import pandas as pd
 
@@ -59,3 +60,14 @@ def print_play(filename):
     print('')
     print('prev size: {}, cur size: {}, fut size: {}, mous size: {}, space size: {}, frame size: {}'.format(prevs[0].shape, currs[0].shape, futus[0].shape, mouss[0].shape, spacs[0].shape, frams[0].shape))
     print('prev dtype: {}, cur dtype: {}, fut dtype: {}, mous dtype: {}, space dtype: {}, frame dtype: {}'.format(prevs[0].dtype, currs[0].dtype, futus[0].dtype, mouss[0].dtype, spacs[0].dtype, frams[0].dtype))
+
+def check_raw_data(frame_count,mouses,spaces):
+    print('frame count: {} - mouses count {} - spaces count {}'.format(int(frame_count),len(mouses),len(spaces)))
+    print(Counter(spaces))
+
+    print("Mouses shape ",mouses.shape)
+    print("Spaces shape ", spaces.shape)
+
+    df_m = pd.DataFrame(mouses)
+    print("Mouses head\n", df_m.head(10))
+    print("Mouses tail\n", df_m.tail(10))
