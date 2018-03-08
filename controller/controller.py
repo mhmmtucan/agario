@@ -1,29 +1,26 @@
+import queue
 import time
-import pyautogui
 
 import numpy as np
-
+import pyautogui
 from mss import mss
+from scipy.spatial import distance as dist
 
+from frame.Recorder import Recorder
+from frame.frame_processor import processV2
+from network.network import convnet
 from utils import Config
 from utils import InputCheck
 from utils import platform_name
 
-from frame.frame_processor import processV2
-
-from frame.Recorder import Recorder
-
-from network.network import convnet
-
-from scipy.spatial import distance as dist
 
 class Controller:
-    def __init__(self,queue):
+    def __init__(self,q):
         self.config = Config()
         self.model = convnet(self.config)
         self.model.load('agario-convnet.model')
         self.recorder = Recorder()
-        self.queue = queue
+        self.q = q
 
     def start_playing(self):
         paused = True
@@ -32,7 +29,7 @@ class Controller:
         sct = mss()
 
         base_color = []
-        unix_keys = []
+
         first_time = True
         prev_areas = [0] * 5
         
@@ -44,11 +41,15 @@ class Controller:
 
         # main loop
         while True:
+            unix_keys = []
             if platform_name == 'Windows':
                 keys = ic.get_keys()
             else:
                 keys = []
-                unix_keys = self.queue.get()
+                try:
+                    unix_keys = self.q.get(block=False)
+                except queue.Empty:
+                    pass
 
             if paused == False:
                 image = np.array(sct.grab(monitor=self.config.roi), dtype='uint8')
@@ -58,7 +59,7 @@ class Controller:
                     base_color = image[image.shape[0]//2,image.shape[1]//2]
                     first_time = False
 
-                frame, area, base_color = processV2(image, base_color, self.config)
+                resized_image, frame, area = processV2(image, base_color, self.config)
 
                 past_areas = np.array(prev_areas).reshape(-1, 5)
                 current_area = np.array([area]).reshape(-1, 1)
@@ -82,7 +83,7 @@ class Controller:
                     if d >= best_prediction[0]: # euclidean distance always returns positive number
                         best_prediction = (d, mouse)
 
-                target_mouse_pos = ic.get_mouse_position(best_prediction[1])
+                target_mouse_pos = ic.get_mouse_positionV2(best_prediction[1])
                 pyautogui.moveTo(target_mouse_pos)
                 
                 prev_areas.pop(0)

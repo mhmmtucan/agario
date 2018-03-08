@@ -1,23 +1,19 @@
-import cv2
-import tflearn
-
-import numpy as np
-import tensorflow as tf
-
-from utils import Config
 from random import shuffle
 
+import cv2
+import numpy as np
+import tensorflow as tf
+import tflearn
 from tflearn.layers.conv import conv_2d
 from tflearn.layers.conv import max_pool_2d
-
 from tflearn.layers.core import dropout
-from tflearn.layers.core import input_data
 from tflearn.layers.core import fully_connected
-
+from tflearn.layers.core import input_data
 from tflearn.layers.estimator import regression
-
 from tflearn.layers.normalization import batch_normalization
-from tflearn.layers.normalization import local_response_normalization
+
+from utils import Config
+
 
 # tensorboard --logdir=foo:C:/Users/malkoch/Desktop/Github/agario/log
 
@@ -67,7 +63,7 @@ def convnet(config):
     # linear regression -> scalar prediction
     network = regression(network, optimizer='adam', loss=tf.losses.mean_squared_error, learning_rate=1e-3, name='targets')
 
-    model = tflearn.DNN(network, checkpoint_path='model_convnet', max_checkpoints=1, tensorboard_verbose=2, tensorboard_dir='log')
+    model = tflearn.DNN(network, checkpoint_path='model_convnet', max_checkpoints=1, tensorboard_verbose=3, tensorboard_dir='log')
 
     return model
 
@@ -141,7 +137,7 @@ def create_model(filename):
     input = train_data[:-test_data_len]
     test = train_data[-test_data_len:]
     print('got the data')
-
+    tf.reset_default_graph()
     #show_images(input, test, config)
 
     model = convnet(config)

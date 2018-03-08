@@ -1,13 +1,11 @@
-import time
-import random
 import platform
-import pyautogui
-import numpy as np
+import random
 import subprocess
 
+import numpy as np
+import pyautogui
 from pynput.keyboard import Key
 from pynput.keyboard import Listener
-
 from scipy.spatial import distance as dist
 
 platform_name = platform.system()
@@ -68,13 +66,15 @@ class Config:
         self.actions = 9 # dismissing space hits for now
         self.keys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ 1234567890'
 
-# pygame and getkey modules did not work as i wanted. need to find another module for that
-# could not find anything else
-# for now i have used win32api for myself
-# did not delete the old scritps
+
 class InputCheck:
     def __init__(self, config):
         self.keys = config.keys
+        self.raw_width = config.raw_width
+        self.raw_height = config.raw_height
+        self.height_pieces = 3
+        self.width_pieces = 3
+        self.raw_screen_ratio = self.raw_height / config.screen_height
 
         self.key_list = ['\b']
         for char in self.keys:
@@ -161,6 +161,20 @@ class InputCheck:
             return list((0, 0, 0, 0, 1, 0, 0, 0, 0))
         else:
             return list(min_dist[1])
+
+    def get_mouse_vectorV2(self,mouse):
+        vect = np.zeros((self.height_pieces,self.width_pieces),dtype=int)
+        vect[mouse[1] // (self.raw_height // self.height_pieces)][mouse[0] // (self.raw_width // self.width_pieces)] = 1
+        return vect.flatten().tolist()
+
+    def get_mouse_positionV2(self,vector):
+        vect = np.array(vector).reshape(self.height_pieces,self.width_pieces)
+        (y,x) = np.unravel_index(np.argmax(vect, axis=None), vect.shape)
+        y_pos = int((y + 0.5) * (self.raw_height // self.height_pieces) * (1/self.raw_screen_ratio))
+        x_pos = int((x + 0.5) * (self.raw_width // self.width_pieces) * (1/self.raw_screen_ratio))
+
+        return tuple([x_pos,y_pos])
+
 
 class ExperienceBuffer:
     def __init__(self, buffer_size = 50000):

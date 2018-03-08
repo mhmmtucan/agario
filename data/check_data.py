@@ -1,8 +1,8 @@
-import cv2
+from collections import Counter
+
 import numpy as np
 import pandas as pd
 
-from collections import Counter
 
 def print_data(filename):
     data = np.load(filename)

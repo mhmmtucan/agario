@@ -1,11 +1,11 @@
-import cv2
 import math
 
-import numpy as np
+import cv2
 import imutils as im
-
+import numpy as np
 from scipy import stats
 from scipy.spatial import distance as dist
+
 
 # could not make the other one work, so i used this one instead
 # it was always failing and giving errors (main character not found and index is out of range at the line main_obj = main_objects[min_dist[1]])

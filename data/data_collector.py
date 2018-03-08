@@ -1,27 +1,20 @@
 import os
-import uuid
-import cv2
-import shutil
 import queue
-import pyautogui
+import shutil
+import uuid
 
+import cv2
 import numpy as np
-
+import pyautogui
 from mss import mss
 
-from utils import say
+from frame.Recorder import Recorder
+from frame.frame_processor import processV2
 from utils import Config
+from utils import ExperienceBuffer
 from utils import InputCheck
 from utils import platform_name
-from utils import ExperienceBuffer
-
-from frame.frame_processor import processV2
-from frame.Recorder import Recorder
-
-from data.check_data import check_raw_data
-from data.check_data import print_data
-from data.check_data import print_play
-from data.check_data import print_size
+from utils import say
 
 
 def combine_data(foldername, outfilename):
@@ -248,7 +241,7 @@ def combine_raw():
         frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
         frame_count += chop_from_end
 
-        check_raw_data(frame_count,mouses,spaces)
+        #check_raw_data(frame_count,mouses,spaces)
 
         base_color = []
         first_time = True
@@ -275,9 +268,8 @@ def combine_raw():
         processed_mouses = []
         # process mouses to mouse vector
         # mouses are raw data, which is x and y positions according to raw data res, so get_mouse_vector for raw resolution
-        # TODO: need to change get_mouse_vector func to return data for raw mouse pos
         for k, m in enumerate(mouses):
-            processed_mouses.append(ic.get_mouse_vector(k, isRaw=True))
+            processed_mouses.append(ic.get_mouse_vectorV2(m))
 
         new_data = convert_data(diameters, frames, processed_mouses, spaces).buffer
 

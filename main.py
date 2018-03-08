@@ -1,38 +1,17 @@
 # try to find better names for packages and modules
-import os
-import uuid
 import threading
-
+import uuid
 from queue import Queue
 
-from utils import Config
-from utils import InputCheck
-from utils import get_unix_keys
-from utils import platform_name
-from utils import ExperienceBuffer
-
-from data.check_data import print_data
-from data.check_data import print_play
-from data.check_data import print_size
-
-from data.data_collector import fix_data
+from controller.controller import Controller
 from data.data_collector import combine_data
-from data.data_collector import convert_data
 from data.data_collector import combine_raw
 from data.data_collector import start_collecting
-
-from frame.frame_processor import processV2
-
-from frame.Recorder import Recorder
-
-from controller.controller import Controller
-
-from network.network import convnet
 from network.network import create_model
-from network.network import train_convnet
+from utils import get_unix_keys
+from utils import platform_name
 
-foldername = './training-data/'
-outfilename = 'training-data.npy'
+
 
 def collectRaw(queue=None):
     foldername = './raw_data/'
@@ -44,13 +23,16 @@ def collectLive(queue=None):
     start_collecting(filename, queue, False)
 
 def combine():
+    foldername = './training-data/'
+    outfilename = 'training-data.npy'
     combine_data(foldername, outfilename)
 
 def train():
-    create_model(outfilename)
-    #print_data(outfilename)
-    #print_size(outfilename)
-    #print_play(outfilename)
+    processed_data = "combined_raw.npy"
+    create_model(processed_data)
+    #print_data(processed_data)
+    #print_size(processed_data)
+    #print_play(processed_data)
 
 def control(queue=None):
     controller = Controller(queue)
@@ -58,7 +40,7 @@ def control(queue=None):
 
 if __name__ == '__main__':
     # collect raw, combine raw, collect live, combine, train, control
-    one_hot = [0,1,0,0,0,0]
+    one_hot = [0,0,0,0,0,1]
     a, b, c, d, e, f = [one_hot[i] == 1 for i in range(6)]
 
     if platform_name != 'Windows':
