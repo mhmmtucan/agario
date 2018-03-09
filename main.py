@@ -7,11 +7,9 @@ from controller.controller import Controller
 from data.data_collector import combine_data
 from data.data_collector import combine_raw
 from data.data_collector import start_collecting
-from network.network import create_model
+from trainer.network import create_model
 from utils import get_unix_keys
 from utils import platform_name
-
-
 
 def collectRaw(queue=None):
     foldername = './raw_data/'
@@ -35,7 +33,8 @@ def train():
     #print_play(processed_data)
 
 def control(queue=None):
-    controller = Controller(queue)
+    model_file='model.h5'
+    controller = Controller(queue,model_file=model_file)
     controller.start_playing()
 
 if __name__ == '__main__':

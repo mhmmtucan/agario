@@ -8,17 +8,18 @@ from scipy.spatial import distance as dist
 
 from frame.Recorder import Recorder
 from frame.frame_processor import processV2
-from network.network import convnet
+from trainer.network import convnet
 from utils import Config
 from utils import InputCheck
 from utils import platform_name
-
+from keras.models import load_model
 
 class Controller:
-    def __init__(self,q):
+    def __init__(self,q,model_file):
         self.config = Config()
         self.model = convnet(self.config)
-        self.model.load('agario-convnet.model')
+        #self.model.load('agario-convnet.model')
+        self.model = load_model(model_file)
         self.recorder = Recorder()
         self.q = q
 
@@ -34,10 +35,7 @@ class Controller:
         prev_areas = [0] * 5
         
         # wait 5 seconds to hide the terminal and start the game
-        print("Open agar.io in 5 seconds")
-        for i in range(5,0,-1):
-            print(i)
-            time.sleep(1)
+        print("Press c to start game")
 
         # main loop
         while True:
@@ -79,7 +77,10 @@ class Controller:
 
                     prediction = self.model.predict([main_input, side_input])[0] # returns a list with 5 elements, showing the future areas
 
-                    d = dist.euclidean(prev_areas, prediction) # find better solution to find the best direction to go
+                    #d = dist.euclidean(prev_areas, prediction) # find better solution to find the best direction to go
+                    diff = np.array(prediction)-np.array(prev_areas)
+                    weights = np.array([5,4,3,2,1])
+                    d = np.dot(diff,weights)
                     if d >= best_prediction[0]: # euclidean distance always returns positive number
                         best_prediction = (d, mouse)
 
@@ -88,8 +89,6 @@ class Controller:
                 
                 prev_areas.pop(0)
                 prev_areas.append(area)
-            else:
-                print('waiting the user to start the game')
 
             if 'Q' in keys or 'q' in unix_keys:
                 print('quit playing')

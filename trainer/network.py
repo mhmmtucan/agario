@@ -14,9 +14,6 @@ from tflearn.layers.normalization import batch_normalization
 
 from utils import Config
 
-
-# tensorboard --logdir=foo:C:/Users/malkoch/Desktop/Github/agario/log
-
 def convnet(config):
     network = input_data(shape=[None, config.sample_height, config.sample_width, config.sample_depth], name='input') # h = 90, w = 150, d = 1
 
