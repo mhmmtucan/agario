@@ -1,5 +1,5 @@
 trainingInput:
   scaleTier: CUSTOM
-  masterType: standard
+  masterType: large_model
   runtimeVersion: "1.4"
   pythonVersion: "3.5"

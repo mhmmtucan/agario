@@ -1,13 +1,11 @@
 import queue
-import time
 
 import numpy as np
 import pyautogui
 from mss import mss
-from scipy.spatial import distance as dist
 
 from frame.Recorder import Recorder
-from frame.frame_processor import processV2
+from frame.frame_processor import process
 from trainer.network import convnet
 from utils import Config
 from utils import InputCheck
@@ -57,7 +55,7 @@ class Controller:
                     base_color = image[image.shape[0]//2,image.shape[1]//2]
                     first_time = False
 
-                resized_image, frame, area = processV2(image, base_color, self.config)
+                resized_image, frame, area = process(image, base_color, self.config)
 
                 past_areas = np.array(prev_areas).reshape(-1, 5)
                 current_area = np.array([area]).reshape(-1, 1)
@@ -84,7 +82,7 @@ class Controller:
                     if d >= best_prediction[0]: # euclidean distance always returns positive number
                         best_prediction = (d, mouse)
 
-                target_mouse_pos = ic.get_mouse_positionV2(best_prediction[1])
+                target_mouse_pos = ic.get_mouse_position(best_prediction[1])
                 pyautogui.moveTo(target_mouse_pos)
                 
                 prev_areas.pop(0)

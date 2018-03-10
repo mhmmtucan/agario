@@ -6,6 +6,6 @@ gcloud ml-engine local train \
   --module-name trainer.network-keras \
   --package-path ./trainer \
   -- \
-  --train-file combined_raw.npy \
+  --train-file train_data.npy \
   --job-dir ./tmp/ \
   --augmented False

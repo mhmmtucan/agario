@@ -9,49 +9,12 @@ import pyautogui
 from mss import mss
 
 from frame.Recorder import Recorder
-from frame.frame_processor import processV2
+from frame.frame_processor import process
 from utils import Config
 from utils import ExperienceBuffer
 from utils import InputCheck
 from utils import platform_name
 from utils import say
-
-
-def combine_data(foldername, outfilename):
-    combined_data = []
-    for file in os.listdir(foldername):
-        if file == '.DS_Store':
-            continue
-        new_data = np.load(foldername + file)
-        combined_data.extend(new_data)
-
-    np.save(outfilename, np.reshape(np.array(combined_data), [-1, 6]))
-
-
-def fix_data(filename):
-    experience_buffer = ExperienceBuffer()
-    print('loading data to fix')
-    data = np.load(filename)
-    for d in data:
-        past_diameters = d[0]
-        current_diameter = d[1]
-        future_diameters = d[2]
-        mouse = d[3]
-        space = d[4]
-        current_frame = d[5]
-
-        past_diameters = np.array(past_diameters).reshape(5)
-        current_diameter = np.array([current_diameter]).reshape(1)
-        future_diameters = np.array(future_diameters).reshape(5)
-        mouse = np.array(mouse).reshape(9)
-        space = np.array([space]).reshape(1)
-
-        experience_buffer.add(
-            np.reshape(np.array([past_diameters, current_diameter, future_diameters, mouse, space, current_frame]),
-                       [1, 6]))
-
-    experience_buffer.save(filename)
-    print('saved the fixed data')
 
 
 def convert_data(diameters, frames, mouses, spaces):
@@ -132,7 +95,7 @@ def start_collecting(foldername, q, isRaw):
                 # mouse positions adjusted according to raw data screen resolution
                 mouses.append([int(i*config.raw_screen_ratio) for i in pyautogui.position()])
             else:
-                resized_image, frame, diam = processV2(image, base_color, config)
+                resized_image, frame, diam = process(image, base_color, config)
 
                 # cv2.imshow('frame', frame)
                 # cv2.moveWindow('frame', 0, 0)
@@ -140,7 +103,7 @@ def start_collecting(foldername, q, isRaw):
                 diameters.append(diam)
                 frames.append(frame)
 
-                # recorder.Record(resized_image, filename + "_f")
+                recorder.Record(resized_image, filename + "frames")
 
                 mouses.append(ic.get_mouse_vector(pyautogui.position()))
             # should space elemnts be 1x1 lists or normal integer
@@ -167,7 +130,7 @@ def start_collecting(foldername, q, isRaw):
             print('processing the user experience started')
             # create a function instead of this
             session_buffer.add(convert_data(diameters, frames, mouses, spaces).buffer)
-            session_buffer.save(filename + ".npy")
+            session_buffer.save(filename + "train_data.npy")
 
             print('processing the user experience finnished')
             print('experience length: {}'.format(session_buffer.length()))
@@ -220,15 +183,18 @@ def combine_raw():
     used_data_folder = foldername + '_used/'
     combined_raw = []
     total_frame = 0
-    config = Config()
     chop_from_end = -15
     total_folder = len(os.listdir(foldername)) - 1
 
+    if '.DS_Store' in os.listdir(foldername):
+        os.remove(foldername+'/.DS_Store')
+        total_folder -= 1
+
     for i, subfolder in enumerate(os.listdir(foldername)):
         if subfolder == '.DS_Store' or subfolder == '_used':
-            total_folder -= 1
             continue
 
+        print("\nLoading folder: ",subfolder)
         # fetch all required data
         cap = cv2.VideoCapture(foldername + subfolder + '/frames.avi')
         mouses = np.load(foldername + subfolder + '/mouses.npy')
@@ -255,7 +221,7 @@ def combine_raw():
                 base_color = image[image.shape[0] // 2, image.shape[1] // 2]
                 first_time = False
 
-            resized_image, frame, diam = processV2(image, base_color, config)
+            resized_image, frame, diam = process(image, base_color, config)
 
             frames.append(frame)
             diameters.append(diam)
@@ -269,14 +235,14 @@ def combine_raw():
         # process mouses to mouse vector
         # mouses are raw data, which is x and y positions according to raw data res, so get_mouse_vector for raw resolution
         for k, m in enumerate(mouses):
-            processed_mouses.append(ic.get_mouse_vectorV2(m))
+            processed_mouses.append(ic.get_mouse_vector(m))
 
         new_data = convert_data(diameters, frames, processed_mouses, spaces).buffer
 
         combined_raw.extend(new_data)
 
-        print("{} / {} folder finished".format(i, total_folder))
-        print("{} / {} folder frame / total frame".format(frame_count, total_frame))
+        print("{}/{} folder finished".format(i+1, total_folder))
+        print("{}/{} folder frame/total frame\n".format(frame_count, total_frame))
         cap.release()
 
         # put used data to used folder in order to prevent duplicate data
@@ -285,24 +251,24 @@ def combine_raw():
     if combined_raw:
         # if there is combined and processed raw data, no need to process that part, combine new data with prev
         try:
-            prev_raw_data = np.load("combined_raw.npy")
+            prev_raw_data = np.load("train_data.npy")
             total_frame = len(prev_raw_data)
             print("frame loaded ", total_frame)
             save_data = np.concatenate((prev_raw_data,np.reshape(np.array(combined_raw), [-1, 6])))
-            np.save("combined_raw.npy", save_data)
-            print("combined_raw.npy shape", save_data.shape)
+            np.save("train_data.npy", save_data)
+            print("train_data.npy shape", save_data.shape)
         except:
             save_data = np.reshape(np.array(combined_raw), [-1, 6])
-            np.save("combined_raw.npy", save_data)
-            print("combined_raw.npy shape", save_data.shape)
+            np.save("train_data.npy", save_data)
+            print("train_data.npy shape", save_data.shape)
         print("combined and processed data saved")
 
     else:
         print("no new data found")
 
     try:
-        #print_data("combined_raw.npy")
-        #print_play("combined_raw.npy")
-        #print_size("combined_raw.npy")
+        #print_data("train_data.npy")
+        #print_play("train_data.npy")
+        #print_size("train_data.npy")
         pass
     except: pass

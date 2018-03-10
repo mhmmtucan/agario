@@ -118,6 +118,8 @@ raw_data
 log/
 *.data-00000-of-00001
 
+tmp/
+
 *.index
 
 *.meta
