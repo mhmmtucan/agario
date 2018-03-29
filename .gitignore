@@ -119,6 +119,7 @@ log/
 *.data-00000-of-00001
 
 tmp/
+train_data/
 
 *.index
 

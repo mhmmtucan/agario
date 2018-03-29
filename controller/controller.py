@@ -68,7 +68,7 @@ class Controller:
                     m = np.array(mouse).reshape(-1, 9)
                     s = np.array([0]).reshape(-1, 1)
 
-                    current_frame = np.array(frame).reshape(-1, 90, 150, 1)
+                    current_frame = np.array(frame).reshape(-1, 144, 256, 1)
 
                     main_input = current_frame
                     side_input = np.concatenate([past_areas, current_area, m, s], axis=1).reshape(-1, 16)

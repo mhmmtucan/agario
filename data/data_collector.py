@@ -2,6 +2,7 @@ import os
 import queue
 import shutil
 import uuid
+import math
 
 import cv2
 import numpy as np
@@ -19,7 +20,6 @@ from utils import say
 
 def convert_data(diameters, frames, mouses, spaces):
     episode_buffer = ExperienceBuffer()
-
     frame_num = len(frames)
     look_up = 5
 
@@ -50,7 +50,24 @@ def convert_data(diameters, frames, mouses, spaces):
         mouse = np.array(mouse)
         space = np.array([space])
 
-        episode_buffer.add(np.reshape(np.array([past_diameter, current_diameter, future_diameter, mouse, space, current_frame]),[1, 6]))
+        episode_buffer.add(
+            np.reshape(np.array([past_diameter, current_diameter, future_diameter, mouse, space, current_frame]),
+                       [1, 6]))
+        episode_buffer.add(
+            np.reshape(np.array([past_diameter, current_diameter, future_diameter,
+                                 np.fliplr(np.array(mouse).reshape(3, 3)).flatten().tolist(), space,
+                                 np.fliplr(np.array(current_frame)).tolist()]),
+                       [1, 6]))
+        episode_buffer.add(
+            np.reshape(np.array([past_diameter, current_diameter, future_diameter,
+                                 np.flipud(np.array(mouse).reshape(3, 3)).flatten().tolist(), space,
+                                 np.flipud(np.array(current_frame)).tolist()]),
+                       [1, 6]))
+        episode_buffer.add(
+            np.reshape(np.array([past_diameter, current_diameter, future_diameter,
+                                 np.flipud(np.fliplr(np.array(mouse).reshape(3, 3))).flatten().tolist(), space,
+                                 np.flipud(np.fliplr(np.array(current_frame))).tolist()]),
+                       [1, 6]))
 
     return episode_buffer
 
@@ -91,21 +108,16 @@ def start_collecting(foldername, q, isRaw):
 
             if isRaw:
                 raw_image = cv2.resize(image, (config.raw_width, config.raw_height))
-                recorder.Record(raw_image, filename + "frames")
+                recorder.Record(raw_image, filename)
                 # mouse positions adjusted according to raw data screen resolution
-                mouses.append([int(i*config.raw_screen_ratio) for i in pyautogui.position()])
+                mouses.append([int(i * config.raw_screen_ratio) for i in pyautogui.position()])
             else:
                 resized_image, frame, diam = process(image, base_color, config)
-
-                # cv2.imshow('frame', frame)
-                # cv2.moveWindow('frame', 0, 0)
-                # cv2.waitKey(1)
                 diameters.append(diam)
                 frames.append(frame)
-
-                recorder.Record(resized_image, filename + "frames")
-
+                recorder.Record(resized_image, filename)
                 mouses.append(ic.get_mouse_vector(pyautogui.position()))
+
             # should space elemnts be 1x1 lists or normal integer
             if ' ' in keys or ' ' in unix_keys:
                 spaces.append(1)
@@ -128,7 +140,6 @@ def start_collecting(foldername, q, isRaw):
             base_color = []
 
             print('processing the user experience started')
-            # create a function instead of this
             session_buffer.add(convert_data(diameters, frames, mouses, spaces).buffer)
             session_buffer.save(filename + "train_data.npy")
 
@@ -144,7 +155,8 @@ def start_collecting(foldername, q, isRaw):
             print('processing paused - not saved')
             say("not saved")
             paused = True
-            base_color = []
+            # delete file since raw not saved
+            shutil.rmtree(filename)
 
         if 'R' in keys or 'r' in unix_keys:  # only raw data saved
             print('raw data saved')
@@ -161,22 +173,21 @@ def start_collecting(foldername, q, isRaw):
             base_color = []
             recorder = Recorder()
 
-            if isRaw:
-                filename = foldername + str(uuid.uuid4())
-                if not os.path.exists(filename):
-                    os.makedirs(filename)
-                filename += '/'
+            filename = foldername + str(uuid.uuid4())
+            if not os.path.exists(filename):
+                os.makedirs(filename)
+            filename += '/'
 
             # restart everything
             diameters = []  # every element will be a list with 5 elements
             frames = []  # every element will be the processed version of the screen
-            mouses = []  # every element will be a tuple with 2 elements -> we can change this in to 1 x 8 one hot key vector
+            mouses = []  # every element will be a tuple with 2 elements -> we can change this in to 1 x 9 one hot key vector
             spaces = []  # every element will be an binary integer 0 or 1
 
 
 # combine and process recorded raw data
-# mouse positions adjusted according to raw data screen resolution no need to think here
-def combine_raw():
+# mouse positions adjusted according to raw data screen resolution, no need to think here
+def combine_process_raw():
     config = Config()
     ic = InputCheck(config)
     foldername = "./raw_data/"
@@ -185,16 +196,17 @@ def combine_raw():
     total_frame = 0
     chop_from_end = -15
     total_folder = len(os.listdir(foldername)) - 1
-
+    folder_count = 0
+    batch_size = 5
     if '.DS_Store' in os.listdir(foldername):
-        os.remove(foldername+'/.DS_Store')
+        os.remove(foldername + '/.DS_Store')
         total_folder -= 1
 
     for i, subfolder in enumerate(os.listdir(foldername)):
-        if subfolder == '.DS_Store' or subfolder == '_used':
+        if subfolder == '_used':
             continue
 
-        print("\nLoading folder: ",subfolder)
+        print("\nLoading folder: ", subfolder)
         # fetch all required data
         cap = cv2.VideoCapture(foldername + subfolder + '/frames.avi')
         mouses = np.load(foldername + subfolder + '/mouses.npy')
@@ -207,10 +219,11 @@ def combine_raw():
         frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
         frame_count += chop_from_end
 
-        #check_raw_data(frame_count,mouses,spaces)
+        # check_raw_data(frame_count,mouses,spaces)
 
         base_color = []
         first_time = True
+        recorder = Recorder()
 
         # process image
         for j in range(int(frame_count)):
@@ -227,6 +240,8 @@ def combine_raw():
             diameters.append(diam)
 
             # cv2.imshow("frame", resized_image)
+            # recorder.Record(resized_image, foldername + subfolder + '/processed_')
+
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
         total_frame += frame_count
@@ -234,41 +249,25 @@ def combine_raw():
         processed_mouses = []
         # process mouses to mouse vector
         # mouses are raw data, which is x and y positions according to raw data res, so get_mouse_vector for raw resolution
-        for k, m in enumerate(mouses):
+        for m in mouses:
             processed_mouses.append(ic.get_mouse_vector(m))
 
         new_data = convert_data(diameters, frames, processed_mouses, spaces).buffer
 
         combined_raw.extend(new_data)
 
-        print("{}/{} folder finished".format(i+1, total_folder))
-        print("{}/{} folder frame/total frame\n".format(frame_count, total_frame))
+        print("{}/{} folder finished".format(i + 1, total_folder))
+        print("{}/{} folder frame/total frame\n".format(frame_count * 4, total_frame * 4))
         cap.release()
+        folder_count += 1
 
         # put used data to used folder in order to prevent duplicate data
         shutil.move(foldername + subfolder, used_data_folder)
 
-    if combined_raw:
-        # if there is combined and processed raw data, no need to process that part, combine new data with prev
-        try:
-            prev_raw_data = np.load("train_data.npy")
-            total_frame = len(prev_raw_data)
-            print("frame loaded ", total_frame)
-            save_data = np.concatenate((prev_raw_data,np.reshape(np.array(combined_raw), [-1, 6])))
-            np.save("train_data.npy", save_data)
-            print("train_data.npy shape", save_data.shape)
-        except:
+        if folder_count%batch_size == 0 or folder_count == total_folder:
             save_data = np.reshape(np.array(combined_raw), [-1, 6])
-            np.save("train_data.npy", save_data)
-            print("train_data.npy shape", save_data.shape)
-        print("combined and processed data saved")
-
-    else:
-        print("no new data found")
-
-    try:
-        #print_data("train_data.npy")
-        #print_play("train_data.npy")
-        #print_size("train_data.npy")
-        pass
-    except: pass
+            tag = str(math.ceil(folder_count/batch_size))
+            np.savez_compressed("train_data/train_data"+tag+".npz", data=save_data)
+            print("train_data"+tag+".npz shape", save_data.shape)
+            print("train_data"+str(math.ceil(folder_count/batch_size))+".npy saved")
+            combined_raw = []

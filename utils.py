@@ -52,8 +52,8 @@ class Config:
         self.roi = {'top': 0, 'left': 0, 'width': self.screen_width, 'height': self.screen_height}
         self.center = (self.screen_width // 2, self.screen_height // 2)
 
-        self.sample_width = 320
-        self.sample_height = 180
+        self.sample_width = 256
+        self.sample_height = 144
         self.sample_depth = 1
 
         self.raw_width = 1280

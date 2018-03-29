@@ -14,10 +14,10 @@ class Recorder:
         if self.writer is None:
             if recordResized:
                 (self.h, self.w) = images.shape[:2]
-                self.writer = cv2.VideoWriter(filename + '.avi', self.fourcc, 10, (self.w , self.h), True)
+                self.writer = cv2.VideoWriter(filename + 'frames.avi', self.fourcc, 10, (self.w , self.h), True)
             else:
                 (self.h, self.w) = images[0].shape[:2]
-                self.writer = cv2.VideoWriter(filename + '.avi', self.fourcc, 10, (self.w * 2, self.h * 2), True)
+                self.writer = cv2.VideoWriter(filename + 'frames.avi', self.fourcc, 10, (self.w * 2, self.h * 2), True)
 
         if recordResized:
             output = np.zeros((self.h, self.w, 3), dtype="uint8")
@@ -27,7 +27,6 @@ class Recorder:
                 if images.shape[2] == 4:
                     images = cv2.cvtColor(images, cv2.COLOR_BGRA2BGR)
             output[0: self.h, 0: self.w] = images
-
         else:
             output = np.zeros((self.h * 2, self.w * 2, 3), dtype="uint8")
             if len(images[0].shape) == 2:
