@@ -30,7 +30,7 @@ class Controller:
         base_color = []
 
         first_time = True
-        prev_areas = [0] * 5
+        prev_areas = [22] * 5
         
         # wait 5 seconds to hide the terminal and start the game
         print("Press c to start game")

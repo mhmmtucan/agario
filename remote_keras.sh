@@ -3,7 +3,7 @@ export BUCKET_NAME=agarflow-1773-ml
 export JOB_NAME="agarflow_1773_$(date +%Y%m%d_%H%M%S)"
 export JOB_DIR=gs://$BUCKET_NAME/$JOB_NAME
 export REGION=europe-west1
-export NUM_TRAIN_FILE=4
+export NUM_TRAIN_FILE=6
 
 #for ((i=1;i<=$NUM_TRAIN_FILE;++i))
 #do

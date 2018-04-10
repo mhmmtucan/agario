@@ -2,12 +2,12 @@ import os
 import queue
 import shutil
 import uuid
-import math
 
 import cv2
 import numpy as np
 import pyautogui
 from mss import mss
+from scipy import sparse
 
 from frame.Recorder import Recorder
 from frame.frame_processor import process
@@ -51,22 +51,22 @@ def convert_data(diameters, frames, mouses, spaces):
         space = np.array([space])
 
         episode_buffer.add(
-            np.reshape(np.array([past_diameter, current_diameter, future_diameter, mouse, space, current_frame]),
+            np.reshape(np.array([past_diameter, current_diameter, future_diameter, mouse, space, sparse.csc_matrix(current_frame)]),
                        [1, 6]))
         episode_buffer.add(
             np.reshape(np.array([past_diameter, current_diameter, future_diameter,
                                  np.fliplr(np.array(mouse).reshape(3, 3)).flatten().tolist(), space,
-                                 np.fliplr(np.array(current_frame)).tolist()]),
+                                 sparse.csc_matrix(np.fliplr(np.array(current_frame)))]),
                        [1, 6]))
         episode_buffer.add(
             np.reshape(np.array([past_diameter, current_diameter, future_diameter,
                                  np.flipud(np.array(mouse).reshape(3, 3)).flatten().tolist(), space,
-                                 np.flipud(np.array(current_frame)).tolist()]),
+                                 sparse.csc_matrix(np.flipud(np.array(current_frame)))]),
                        [1, 6]))
         episode_buffer.add(
             np.reshape(np.array([past_diameter, current_diameter, future_diameter,
                                  np.flipud(np.fliplr(np.array(mouse).reshape(3, 3))).flatten().tolist(), space,
-                                 np.flipud(np.fliplr(np.array(current_frame))).tolist()]),
+                                 sparse.csc_matrix(np.flipud(np.fliplr(np.array(current_frame))))]),
                        [1, 6]))
 
     return episode_buffer
@@ -197,7 +197,8 @@ def combine_process_raw():
     chop_from_end = -15
     total_folder = len(os.listdir(foldername)) - 1
     folder_count = 0
-    batch_size = 5
+    batch_count = 0
+
     if '.DS_Store' in os.listdir(foldername):
         os.remove(foldername + '/.DS_Store')
         total_folder -= 1
@@ -235,7 +236,7 @@ def combine_process_raw():
                 first_time = False
 
             resized_image, frame, diam = process(image, base_color, config)
-
+            # apply sparse here,but can be problem with convert data function
             frames.append(frame)
             diameters.append(diam)
 
@@ -264,10 +265,18 @@ def combine_process_raw():
         # put used data to used folder in order to prevent duplicate data
         shutil.move(foldername + subfolder, used_data_folder)
 
-        if folder_count%batch_size == 0 or folder_count == total_folder:
+
+    if combined_raw:
+        np.savez_compressed("train_data/train_data.npz",data=combined_raw)
+        print("train_data.npz saved")
+
+    '''
+        if len(combined_raw) > 10000 or folder_count == total_folder:
+            batch_count += 1
             save_data = np.reshape(np.array(combined_raw), [-1, 6])
-            tag = str(math.ceil(folder_count/batch_size))
-            np.savez_compressed("train_data/train_data"+tag+".npz", data=save_data)
-            print("train_data"+tag+".npz shape", save_data.shape)
-            print("train_data"+str(math.ceil(folder_count/batch_size))+".npy saved")
+
+            np.savez_compressed("train_data/train_data"+str(batch_count)+".npz", data=save_data)
+            print("train_data"+str(batch_count)+".npz shape", save_data.shape)
+
             combined_raw = []
+    '''
