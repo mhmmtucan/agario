@@ -6,7 +6,6 @@ import numpy as np
 import pyautogui
 from pynput.keyboard import Key
 from pynput.keyboard import Listener
-from scipy.spatial import distance as dist
 
 platform_name = platform.system()
 

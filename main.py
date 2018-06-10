@@ -33,7 +33,7 @@ def train():
 
 
 def control(queue=None):
-    model_file = 'model.h5'
+    model_file = 'best_model.h5'
     controller = Controller(queue, model_file=model_file)
     controller.start_playing()
 

@@ -19,6 +19,7 @@ class GameObject:
         self.is_main = False
         self.piece = 1
         self.average_area = area
+        self.nearest_enemy = GameObject
         #self.isMainObj = isMainObj
 
 def process(image, base_color, config):
@@ -28,10 +29,11 @@ def process(image, base_color, config):
     num_of_objects = 0
     # resize the image so processing will be faster
     resized_image = im.resize(image, width=image.shape[1])
+
     #resized_image = cv2.resize(image, (0,0), fx=0.75, fy=0.75)
     #original_image = resized_image.copy()
     #ratio = image.shape[1] / resized_image.shape[1]  # it is bigger than one
-
+    screen_center = (resized_image.shape[1] // 2 , resized_image.shape[0] // 2)
     gray = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
     thresh = cv2.threshold(gray, 30, 255, cv2.THRESH_BINARY)[1]
     #thresh = cv2.GaussianBlur(thresh, (3, 3), 0)
@@ -45,6 +47,7 @@ def process(image, base_color, config):
 
     min_dist = (np.inf, None)
     min_dist_scene = (np.inf, None)
+    nearest_enemy = (750, None)
 
     scene_objects = []
     main_objects = []
@@ -145,18 +148,31 @@ def process(image, base_color, config):
             #            cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 1)
 
         for i, obj in enumerate(scene_objects):
-            if obj.radius < 13 or (obj.area * 139 / 100 < main_obj.area and width/5 < obj.center[0] and obj.center[0] < width* 4/5 and
+            if obj.radius < 13 or (obj.area * 130 / 100 < main_obj.area and width/5 < obj.center[0] and obj.center[0] < width* 4/5 and
                     height/5 < obj.center[1] and obj.center[1] < height * 4/5):
-                if np.array_equal(resized_image[obj.center[1], obj.center[0]], [51, 255, 0, 255]) and obj.radius > 13:
-                    # might be virus
-                    cv2.drawContours(resized_image, [obj.contour], 0, (0, 0, 255), -1)
-                else:
-                    # can eat
-                    cv2.drawContours(resized_image, [obj.contour], 0, (0, 255, 0), -1)
-                    # cv2.putText(resized_image, str(int(obj.radius)), (obj.center[0] - 2, obj.center[1] + 5), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 255, 255))
+
+                # can eat
+                cv2.drawContours(resized_image, [obj.contour], 0, (0, 255, 0), -1)
+                # cv2.putText(resized_image, str(int(obj.radius)), (obj.center[0] - 2, obj.center[1] + 5), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 255, 255))
             else:
                 # can not eat
+                d = dist.euclidean(main_obj.center, obj.center)
+                if d < nearest_enemy[0]:
+                    #main_obj.nearest_enemy = obj
+                    nearest_enemy = (d,obj)
                 cv2.drawContours(resized_image, [obj.contour], 0, (0, 0, 255), -1)
+
+                # TODO: solve here
+                #a = np.abs(np.array(resized_image[obj.center[1], obj.center[0]]) - np.array([30, 222, 30])) < [150, 150, 150]
+                
+                #print(np.all(a))
+                #print(obj.radius)
+                #if np.all(a) and obj.radius > 13:
+                    # might be virus
+                    #cv2.drawContours(resized_image, [obj.contour], 0, (0, 255, 255), -1)
                 # cv2.putText(resized_image, str(int(obj.radius)), (obj.center[0] - 2, obj.center[1] + 5), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 255, 255))
 
-    return resized_image, cv2.cvtColor(cv2.resize(resized_image, (config.sample_width, config.sample_height)), cv2.COLOR_BGRA2GRAY), main_obj.radius
+        #if nearest_enemy[0] != 750:
+        #    cv2.line(resized_image, screen_center, nearest_enemy[1].center, (255, 255, 0), 5)
+
+    return resized_image, cv2.cvtColor(cv2.resize(resized_image, (config.sample_width, config.sample_height)), cv2.COLOR_BGRA2GRAY), nearest_enemy[0]

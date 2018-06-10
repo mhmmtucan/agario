@@ -35,7 +35,7 @@ def convert_data(diameters, frames, mouses, spaces):
         space = spaces[i]
 
         if i < look_up:
-            past_diameter = [22] * (look_up - i) + diameters[0: i]
+            past_diameter = [750] * (look_up - i) + diameters[0: i]
         else:
             past_diameter = diameters[i - look_up: i]
 
@@ -240,8 +240,8 @@ def combine_process_raw():
             frames.append(frame)
             diameters.append(diam)
 
-            # cv2.imshow("frame", resized_image)
-            # recorder.Record(resized_image, foldername + subfolder + '/processed_')
+            #cv2.imshow("frame", resized_image)
+            #recorder.Record(resized_image, foldername + subfolder + '/processed_')
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
@@ -265,10 +265,15 @@ def combine_process_raw():
         # put used data to used folder in order to prevent duplicate data
         shutil.move(foldername + subfolder, used_data_folder)
 
-
-    if combined_raw:
-        np.savez_compressed("train_data/train_data.npz",data=combined_raw)
-        print("train_data.npz saved")
+        if len(combined_raw) > 50000:
+            np.savez_compressed("train_data/train_data"+str(batch_count)+"_"+str(len(combined_raw))+".npz",data=combined_raw)
+            batch_count += 1
+            print("train_data"+str(batch_count)+"_"+str(len(combined_raw))+".npz saved")
+            combined_raw = []
+            
+    if len(combined_raw) > 0:  
+        np.savez_compressed("train_data/train_data" + str(batch_count) + "_" + str(len(combined_raw)) + ".npz", data=combined_raw)
+        print("train_data"+str(batch_count)+"_"+str(len(combined_raw))+".npz saved")
 
     '''
         if len(combined_raw) > 10000 or folder_count == total_folder:
